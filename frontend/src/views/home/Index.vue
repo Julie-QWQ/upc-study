@@ -124,7 +124,7 @@
         </div>
 
         <div v-else class="materials-list">
-          <div v-for="material in recentMaterials" :key="material.id" class="material-card" @click="$router.push(`/materials/${material.id}`)" style="border: none !important; background: transparent !important; border-top: none !important; border-bottom: none !important;">
+          <div v-for="material in recentMaterials" :key="material.id" class="material-card" @click="$router.push(`/materials/${material.id}`)">
             <div class="material-icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -262,7 +262,7 @@ onMounted(() => {
   padding: 32px 24px;
 }
 
-// Hero 区域
+// Hero ??????
 .hero-section {
   text-align: center;
   padding: 60px 20px;
@@ -307,7 +307,7 @@ onMounted(() => {
   }
 }
 
-// 搜索区域
+// ????????????
 .search-section {
   margin-bottom: 32px;
 
@@ -362,7 +362,7 @@ onMounted(() => {
   }
 }
 
-// 快捷入口
+// ????????????
 .shortcuts-section {
   margin-bottom: 32px;
 
@@ -439,8 +439,7 @@ onMounted(() => {
   }
 }
 
-// 最新资料
-.materials-section {
+// ????????????.materials-section {
   .section-header {
     display: flex;
     justify-content: space-between;
@@ -618,8 +617,7 @@ onMounted(() => {
   }
 }
 
-// 响应式
-@media (max-width: 768px) {
+// ?????????@media (max-width: 768px) {
   .page-container {
     padding: 24px 16px;
   }
@@ -663,3 +661,5 @@ onMounted(() => {
   }
 }
 </style>
+
+

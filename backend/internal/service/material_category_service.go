@@ -1,140 +1,158 @@
 package service
 
 import (
-	"errors"
+  "errors"
 
-	"github.com/study-upc/backend/internal/model"
-	"github.com/study-upc/backend/internal/repository"
-	"gorm.io/gorm"
+  "github.com/study-upc/backend/internal/model"
+  "github.com/study-upc/backend/internal/repository"
+  "gorm.io/gorm"
 )
 
 type MaterialCategoryService struct {
-	categoryRepo *repository.MaterialCategoryRepository
+  categoryRepo *repository.MaterialCategoryRepository
 }
 
 func NewMaterialCategoryService(categoryRepo *repository.MaterialCategoryRepository) *MaterialCategoryService {
-	return &MaterialCategoryService{
-		categoryRepo: categoryRepo,
-	}
+  return &MaterialCategoryService{
+    categoryRepo: categoryRepo,
+  }
 }
 
-// List 获取资料类型列表
+func enrichCategory(category *model.MaterialCategoryConfig) *model.MaterialCategoryConfig {
+  if category == nil {
+    return nil
+  }
+  category.NameZh = category.Name
+  category.NameEn = category.Code
+  return category
+}
+
+func enrichCategoryList(categories []model.MaterialCategoryConfig) []model.MaterialCategoryConfig {
+  for i := range categories {
+    enrichCategory(&categories[i])
+  }
+  return categories
+}
+
+// List returns category list.
 func (s *MaterialCategoryService) List(activeOnly bool) ([]model.MaterialCategoryConfig, error) {
-	return s.categoryRepo.List(activeOnly)
+  categories, err := s.categoryRepo.List(activeOnly)
+  if err != nil {
+    return nil, err
+  }
+  return enrichCategoryList(categories), nil
 }
 
-// GetByID 根据ID获取资料类型
+// GetByID returns a category by ID.
 func (s *MaterialCategoryService) GetByID(id uint) (*model.MaterialCategoryConfig, error) {
-	return s.categoryRepo.GetByID(id)
+  category, err := s.categoryRepo.GetByID(id)
+  if err != nil {
+    return nil, err
+  }
+  return enrichCategory(category), nil
 }
 
-// Create 创建资料类型
+// Create creates a new category.
 func (s *MaterialCategoryService) Create(req model.MaterialCategoryRequest) (*model.MaterialCategoryConfig, error) {
-	// 检查代码是否已存在
-	exists, err := s.categoryRepo.ExistsByCode(req.Code, 0)
-	if err != nil {
-		return nil, err
-	}
-	if exists {
-		return nil, errors.New("资料类型代码已存在")
-	}
+  exists, err := s.categoryRepo.ExistsByCode(req.Code, 0)
+  if err != nil {
+    return nil, err
+  }
+  if exists {
+    return nil, errors.New("category code already exists")
+  }
 
-	// 设置默认值
-	category := &model.MaterialCategoryConfig{
-		Code:      req.Code,
-		Name:      req.Name,
-		Description: req.Description,
-		Icon:      req.Icon,
-		SortOrder: req.SortOrder,
-	}
+  category := &model.MaterialCategoryConfig{
+    Code:        req.Code,
+    Name:        req.Name,
+    Description: req.Description,
+    Icon:        req.Icon,
+    SortOrder:   req.SortOrder,
+  }
 
-	if req.IsActive != nil {
-		category.IsActive = *req.IsActive
-	} else {
-		category.IsActive = true
-	}
+  if req.IsActive != nil {
+    category.IsActive = *req.IsActive
+  } else {
+    category.IsActive = true
+  }
 
-	if err := s.categoryRepo.Create(category); err != nil {
-		return nil, err
-	}
+  if err := s.categoryRepo.Create(category); err != nil {
+    return nil, err
+  }
 
-	return category, nil
+  return enrichCategory(category), nil
 }
 
-// Update 更新资料类型
+// Update updates a category.
 func (s *MaterialCategoryService) Update(id uint, req model.MaterialCategoryRequest) (*model.MaterialCategoryConfig, error) {
-	// 获取现有资料类型
-	category, err := s.categoryRepo.GetByID(id)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("资料类型不存在")
-		}
-		return nil, err
-	}
+  category, err := s.categoryRepo.GetByID(id)
+  if err != nil {
+    if errors.Is(err, gorm.ErrRecordNotFound) {
+      return nil, errors.New("category not found")
+    }
+    return nil, err
+  }
 
-	// 检查代码是否已被其他记录使用
-	exists, err := s.categoryRepo.ExistsByCode(req.Code, id)
-	if err != nil {
-		return nil, err
-	}
-	if exists {
-		return nil, errors.New("资料类型代码已存在")
-	}
+  exists, err := s.categoryRepo.ExistsByCode(req.Code, id)
+  if err != nil {
+    return nil, err
+  }
+  if exists {
+    return nil, errors.New("category code already exists")
+  }
 
-	// 更新字段
-	category.Code = req.Code
-	category.Name = req.Name
-	category.Description = req.Description
-	category.Icon = req.Icon
-	category.SortOrder = req.SortOrder
+  category.Code = req.Code
+  category.Name = req.Name
+  category.Description = req.Description
+  category.Icon = req.Icon
+  category.SortOrder = req.SortOrder
 
-	if req.IsActive != nil {
-		category.IsActive = *req.IsActive
-	}
+  if req.IsActive != nil {
+    category.IsActive = *req.IsActive
+  }
 
-	if err := s.categoryRepo.Update(category); err != nil {
-		return nil, err
-	}
+  if err := s.categoryRepo.Update(category); err != nil {
+    return nil, err
+  }
 
-	return category, nil
+  return enrichCategory(category), nil
 }
 
-// Delete 删除资料类型
+// Delete deletes a category.
 func (s *MaterialCategoryService) Delete(id uint) error {
-	// 检查是否被使用
-	category, err := s.categoryRepo.GetByID(id)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return errors.New("资料类型不存在")
-		}
-		return err
-	}
+  category, err := s.categoryRepo.GetByID(id)
+  if err != nil {
+    if errors.Is(err, gorm.ErrRecordNotFound) {
+      return errors.New("category not found")
+    }
+    return err
+  }
 
-	count, err := s.categoryRepo.CheckUsage(category.Code)
-	if err != nil {
-		return err
-	}
-	if count > 0 {
-		return errors.New("该资料类型正在使用中,无法删除")
-	}
+  count, err := s.categoryRepo.CheckUsage(category.Code)
+  if err != nil {
+    return err
+  }
+  if count > 0 {
+    return errors.New("category is in use and cannot be deleted")
+  }
 
-	return s.categoryRepo.Delete(id)
+  return s.categoryRepo.Delete(id)
 }
 
-// ToggleStatus 切换启用状态
+// ToggleStatus toggles category active status.
 func (s *MaterialCategoryService) ToggleStatus(id uint) (*model.MaterialCategoryConfig, error) {
-	category, err := s.categoryRepo.GetByID(id)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("资料类型不存在")
-		}
-		return nil, err
-	}
+  category, err := s.categoryRepo.GetByID(id)
+  if err != nil {
+    if errors.Is(err, gorm.ErrRecordNotFound) {
+      return nil, errors.New("category not found")
+    }
+    return nil, err
+  }
 
-	category.IsActive = !category.IsActive
-	if err := s.categoryRepo.Update(category); err != nil {
-		return nil, err
-	}
+  category.IsActive = !category.IsActive
+  if err := s.categoryRepo.Update(category); err != nil {
+    return nil, err
+  }
 
-	return category, nil
+  return enrichCategory(category), nil
 }

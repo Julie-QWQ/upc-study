@@ -122,6 +122,100 @@
     </div>
 
     <!-- 状态更新对话框 -->
+    <!-- 用户详情 -->
+    <div v-if="detailDialogVisible" class="dialog-overlay" @click.self="detailDialogVisible = false">
+      <div class="dialog dialog-large">
+        <div class="dialog-header">
+          <h3>用户详情</h3>
+          <button class="close-btn" @click="detailDialogVisible = false">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6 6 18"></path>
+              <path d="m6 6 12 12"></path>
+            </svg>
+          </button>
+        </div>
+
+        <div class="dialog-body">
+          <div v-if="detailLoading" class="detail-loading">加载中...</div>
+          <div v-else-if="!userDetail" class="detail-empty">暂无用户详情</div>
+          <div v-else class="detail-grid">
+            <div class="detail-section">
+              <h4>基本信息</h4>
+              <div class="detail-row">
+                <span class="detail-label">用户名</span>
+                <span class="detail-value">{{ userDetail.user.username || '-' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">真实姓名</span>
+                <span class="detail-value">{{ userDetail.user.real_name || '-' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">邮箱</span>
+                <span class="detail-value">{{ userDetail.user.email || '-' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">手机号</span>
+                <span class="detail-value">{{ userDetail.user.phone || '-' }}</span>
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <h4>身份信息</h4>
+              <div class="detail-row">
+                <span class="detail-label">角色</span>
+                <span class="detail-value">{{ getRoleText(userDetail.user.role) }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">状态</span>
+                <span class="detail-value">{{ getStatusText(userDetail.user.status) }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">专业</span>
+                <span class="detail-value">{{ userDetail.user.major || '-' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">班级</span>
+                <span class="detail-value">{{ userDetail.user.class || '-' }}</span>
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <h4>记录统计</h4>
+              <div class="detail-row">
+                <span class="detail-label">下载总次数</span>
+                <span class="detail-value">{{ userDetail.download_total ?? 0 }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">上传资料</span>
+                <span class="detail-value">{{ userDetail.upload_total ?? 0 }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">收藏数量</span>
+                <span class="detail-value">{{ userDetail.favorite_total ?? 0 }}</span>
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <h4>时间信息</h4>
+              <div class="detail-row">
+                <span class="detail-label">注册时间</span>
+                <span class="detail-value">{{ formatDate(userDetail.user.created_at) }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">最近登录</span>
+                <span class="detail-value">{{ formatDate(userDetail.user.last_login_at) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dialog-footer">
+          <button class="btn btn-secondary" @click="detailDialogVisible = false">关闭</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 状态更新对话框 -->
     <div v-if="statusDialogVisible" class="dialog-overlay" @click.self="statusDialogVisible = false">
       <div class="dialog">
         <div class="dialog-header">
@@ -214,8 +308,8 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getUserList, updateUserStatus, deleteUser } from '@/api/admin'
-import type { User } from '@/api/admin'
+import { getUserList, getUserDetail, updateUserStatus, deleteUser } from '@/api/admin'
+import type { User, UserDetailResponse } from '@/api/admin'
 
 const loading = ref(false)
 const userList = ref<User[]>([])
@@ -234,7 +328,10 @@ const pagination = reactive({
 
 const statusDialogVisible = ref(false)
 const deleteDialogVisible = ref(false)
+const detailDialogVisible = ref(false)
+const detailLoading = ref(false)
 const currentUser = ref<User>()
+const userDetail = ref<UserDetailResponse | null>(null)
 const statusForm = reactive({
   status: '',
   reason: ''
@@ -280,8 +377,18 @@ function changePage(newPage: number) {
   loadUserList()
 }
 
-function handleViewDetail(user: User) {
-  ElMessage.info('用户详情功能开发中...')
+async function handleViewDetail(user: User) {
+  detailDialogVisible.value = true
+  detailLoading.value = true
+  userDetail.value = null
+  try {
+    const { data } = await getUserDetail(user.id)
+    userDetail.value = data
+  } catch (error: any) {
+    ElMessage.error(error.message || '获取用户详情失败')
+  } finally {
+    detailLoading.value = false
+  }
 }
 
 function handleUpdateStatus(user: User) {
@@ -324,8 +431,12 @@ async function confirmDelete() {
 
 function formatDate(date: string) {
   const d = new Date(date)
+  if (Number.isNaN(d.getTime())) {
+    return '-'
+  }
   const now = new Date()
   const diff = now.getTime() - d.getTime()
+  if (diff < 0) return '刚刚'
   const days = Math.floor(diff / (1000 * 60 * 60 * 24))
 
   if (days === 0) return '今天'
@@ -703,6 +814,56 @@ onMounted(() => {
   overflow-y: auto;
 }
 
+.dialog-large {
+  max-width: 760px;
+}
+
+.detail-loading,
+.detail-empty {
+  padding: 12px 0;
+  color: #6b7280;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.detail-section {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: #fafafa;
+}
+
+.detail-section h4 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: #4b5563;
+  padding: 4px 0;
+}
+
+.detail-label {
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.detail-value {
+  color: #111827;
+  text-align: right;
+  word-break: break-all;
+}
+
 .dialog-header {
   display: flex;
   justify-content: space-between;
@@ -881,4 +1042,11 @@ onMounted(() => {
   margin: 0;
   line-height: 1.5;
 }
+
+@media (max-width: 768px) {
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 </style>

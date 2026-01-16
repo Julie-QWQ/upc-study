@@ -56,7 +56,7 @@ const categories = computed(() => {
     const dynamicCategories = [
       { label: '全部分类', value: '' },
       ...activeCats.map(cat => ({
-        label: cat.name,
+        label: cat.name_zh || cat.name || cat.code,
         value: cat.code
       }))
     ]

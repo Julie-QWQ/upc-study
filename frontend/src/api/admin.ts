@@ -44,6 +44,31 @@ export interface UpdateUserStatusRequest {
   reason?: string
 }
 
+export interface UserDetailResponse {
+  user: User
+  statistics?: UserStatistics
+  recent_activity?: ActivityLog[]
+  download_total?: number
+  upload_total?: number
+  favorite_total?: number
+}
+
+export interface ActivityLog {
+  action: string
+  resource: string
+  description: string
+  created_at: string
+}
+
+export interface UserStatistics {
+  total?: number
+  today?: number
+  week?: number
+  month?: number
+  active?: number
+  by_role?: Record<string, number>
+}
+
 // 系统配置相关类型
 
 export interface SystemConfig {
@@ -83,7 +108,7 @@ export function getUserList(params: UserListRequest) {
  * 获取用户详情
  */
 export function getUserDetail(id: number) {
-  return request({
+  return request<UserDetailResponse>({
     url: `/admin/users/${id}`,
     method: 'get'
   })

@@ -123,7 +123,7 @@ onMounted(() => {
   gap: 48px;
 }
 
-// 中间内容流
+// main content area
 .content-stream {
   max-width: 100%;
 }
@@ -169,14 +169,14 @@ onMounted(() => {
   }
 }
 
-// 资料列表 - Substack 风格的内容流
+// material list
 .materials-list {
   display: flex;
   flex-direction: column;
   gap: 0;
 }
 
-// 加载状态
+// loading state
 .loading-state {
   display: flex;
   flex-direction: column;
@@ -200,7 +200,7 @@ onMounted(() => {
   100% { background-position: -200% 0; }
 }
 
-// 空状态
+// empty state
 .empty-state {
   text-align: center;
   padding: 80px 40px;
@@ -242,7 +242,7 @@ onMounted(() => {
   }
 }
 
-// 分页
+// pagination
 .pagination-section {
   margin-top: 40px;
   padding-top: 24px;
@@ -271,14 +271,14 @@ onMounted(() => {
   }
 }
 
-// 右侧边栏
+// right sidebar
 .right-sidebar {
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
-// 响应式
+// responsive
 @media (max-width: 1024px) {
   .page-container {
     grid-template-columns: 1fr;
@@ -306,3 +306,5 @@ onMounted(() => {
   }
 }
 </style>
+
+

@@ -1,0 +1,72 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: study-upc-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: study_upc_dev
+      TZ: Asia/Shanghai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d study_upc_dev"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - study-upc-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: study-upc-redis
+    restart: unless-stopped
+    command: sh -c 'if [ -n "$$REDIS_PASSWORD" ]; then redis-server --requirepass $$REDIS_PASSWORD --appendonly yes; else redis-server --appendonly yes; fi'
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - study-upc-network
+
+  minio:
+    image: minio/minio:latest
+    container_name: study-upc-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - study-upc-network
+
+networks:
+  study-upc-network:
+    name: docker_study-upc-network
+    external: true
+
+volumes:
+  postgres_data:
+    name: docker_postgres_data
+  redis_data:
+    name: docker_redis_data
+  minio_data:
+    name: docker_minio_data

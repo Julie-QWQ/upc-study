@@ -133,6 +133,9 @@ type UserDetailResponse struct {
 	User            User             `json:"user"`
 	Statistics      UserStatistics   `json:"statistics"`
 	RecentActivity  []ActivityLog    `json:"recent_activity"`
+	DownloadTotal   int64            `json:"download_total"`
+	UploadTotal     int64            `json:"upload_total"`
+	FavoriteTotal   int64            `json:"favorite_total"`
 }
 
 // ActivityLog 活动日志

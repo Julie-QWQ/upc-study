@@ -845,7 +845,7 @@ onMounted(() => {
 .article-footer {
   padding: 32px 48px;
   border-top: 1px solid #f2f2f2;
-  background: #fafafa;
+  background: #ffffff;
 
   @media (max-width: 768px) {
     padding: 24px;

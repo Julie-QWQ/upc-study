@@ -1,6 +1,7 @@
 package router
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -12,10 +13,12 @@ import (
 	"github.com/study-upc/backend/internal/middleware"
 	"github.com/study-upc/backend/internal/pkg/config"
 	"github.com/study-upc/backend/internal/pkg/database"
+	"github.com/study-upc/backend/internal/pkg/logger"
 	"github.com/study-upc/backend/internal/pkg/oss"
 	"github.com/study-upc/backend/internal/pkg/utils"
 	"github.com/study-upc/backend/internal/repository"
 	"github.com/study-upc/backend/internal/service"
+	"go.uber.org/zap"
 )
 
 // SetupRouter 设置路由
@@ -76,12 +79,19 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 	if err != nil {
 		panic(fmt.Sprintf("初始化 OSS 客户端失败: %v", err))
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := ossClient.TestConnection(ctx); err != nil {
+		logger.Error("OSS 连接测试失败", zap.Error(err), zap.String("endpoint", cfg.OSS.Endpoint), zap.String("bucket", cfg.OSS.BucketName))
+		panic(fmt.Sprintf("OSS 连接测试失败: %v", err))
+	}
+	logger.Info("OSS 连接成功", zap.String("endpoint", cfg.OSS.Endpoint), zap.String("bucket", cfg.OSS.BucketName), zap.Bool("ssl", cfg.OSS.UseSSL))
 	// 最大文件大小 512MB，上传签名 1 小时有效期，下载签名 24 小时有效期
 	ossService := oss.NewOSSService(ossClient, 536870912, 1*time.Hour, 24*time.Hour)
 
 	// 初始化 Service 层
 	authService := service.NewAuthService(userRepo, jwtManager, redisClient)
-	materialService := service.NewMaterialService(materialRepo, favoriteRepo, downloadRepo, materialCategoryRepo, ossService, redisClient)
+	materialService := service.NewMaterialService(materialRepo, favoriteRepo, downloadRepo, materialCategoryRepo, adminRepo, ossService, redisClient)
 	materialCategoryService := service.NewMaterialCategoryService(materialCategoryRepo)
 	favoriteService := service.NewFavoriteService(favoriteRepo, materialRepo)
 	reportService := service.NewReportService(reportRepo, materialRepo)

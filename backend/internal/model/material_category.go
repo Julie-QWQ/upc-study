@@ -19,6 +19,8 @@ type MaterialCategoryConfig struct {
 	Icon        string  `gorm:"type:varchar(100)" json:"icon"`                                                   // 图标
 	SortOrder   int     `gorm:"not null;default:0;index:idx_sort_order" json:"sort_order"`                      // 排序
 	IsActive    bool    `gorm:"not null;default:true;index:idx_is_active" json:"is_active"`                     // 是否启用
+	NameZh      string  `gorm:"-" json:"name_zh"`                                                                // 中文名称
+	NameEn      string  `gorm:"-" json:"name_en"`                                                                // 英文名称
 }
 
 // TableName 指定表名

@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/study-upc/backend/internal/model"
 	"gorm.io/gorm"
@@ -96,6 +97,8 @@ type DownloadRecordRepository interface {
 	CountByMaterial(ctx context.Context, materialID uint) (int64, error)
 	// ListRecentByMaterial 获取资料最近的下载记录
 	ListRecentByMaterial(ctx context.Context, materialID uint, limit int) ([]*model.DownloadRecord, error)
+	// CountByUserSince 统计用户从指定时间起的下载次数
+	CountByUserSince(ctx context.Context, userID uint, since time.Time) (int64, error)
 }
 
 // ReportRepository 举报数据访问层接口
@@ -518,6 +521,17 @@ func (r *downloadRecordRepository) ListRecentByMaterial(ctx context.Context, mat
 		return nil, result.Error
 	}
 	return records, nil
+}
+
+func (r *downloadRecordRepository) CountByUserSince(ctx context.Context, userID uint, since time.Time) (int64, error) {
+	var count int64
+	result := r.db.WithContext(ctx).Model(&model.DownloadRecord{}).
+		Where("user_id = ? AND created_at >= ?", userID, since).
+		Count(&count)
+	if result.Error != nil {
+		return 0, result.Error
+	}
+	return count, nil
 }
 
 // reportRepository 举报数据访问层实现

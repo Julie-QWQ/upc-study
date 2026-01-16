@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/study-upc/backend/internal/model"
 	"github.com/study-upc/backend/internal/pkg/oss"
 	"github.com/study-upc/backend/internal/repository"
+	"gorm.io/gorm"
 )
 
 var (
@@ -24,6 +26,13 @@ var (
 	ErrMaterialAlreadyReviewed = errors.New("资料已审核")
 	// ErrInvalidMaterialStatus 无效的资料状态
 	ErrInvalidMaterialStatus = errors.New("无效的资料状态")
+	// ErrDownloadLimitExceeded 超过每日下载上限
+	ErrDownloadLimitExceeded = errors.New("已达到每日下载上限")
+)
+
+const (
+	downloadDailyLimitKey = "download_daily_limit"
+	defaultDailyLimit     = 20
 )
 
 // MaterialService 资料服务接口
@@ -56,6 +65,7 @@ type materialService struct {
 	favoriteRepo      repository.FavoriteRepository
 	downloadRepo      repository.DownloadRecordRepository
 	categoryRepo      *repository.MaterialCategoryRepository
+	configRepo        repository.SystemConfigRepository
 	ossService        oss.OSSService
 	redisClient       *redis.Client
 	cacheTTL          time.Duration
@@ -67,6 +77,7 @@ func NewMaterialService(
 	favoriteRepo repository.FavoriteRepository,
 	downloadRepo repository.DownloadRecordRepository,
 	categoryRepo *repository.MaterialCategoryRepository,
+	configRepo repository.SystemConfigRepository,
 	ossService oss.OSSService,
 	redisClient *redis.Client,
 ) MaterialService {
@@ -75,6 +86,7 @@ func NewMaterialService(
 		favoriteRepo: favoriteRepo,
 		downloadRepo: downloadRepo,
 		categoryRepo: categoryRepo,
+		configRepo:   configRepo,
 		ossService:   ossService,
 		redisClient:  redisClient,
 		cacheTTL:     10 * time.Minute, // 默认缓存 10 分钟
@@ -374,6 +386,19 @@ func (s *materialService) GetDownloadURL(ctx context.Context, materialID, userID
 		return "", ErrAccessDenied
 	}
 
+	dailyLimit := s.getDailyDownloadLimit(ctx)
+	if dailyLimit > 0 {
+		now := time.Now()
+		startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+		downloaded, err := s.downloadRepo.CountByUserSince(ctx, userID, startOfDay)
+		if err != nil {
+			return "", fmt.Errorf("统计下载次数失败: %w", err)
+		}
+		if downloaded >= int64(dailyLimit) {
+			return "", ErrDownloadLimitExceeded
+		}
+	}
+
 	// 生成下载签名
 	downloadURL, err := s.ossService.GenerateDownloadSignature(ctx, material.FileKey)
 	if err != nil {
@@ -400,6 +425,32 @@ func (s *materialService) GetDownloadURL(ctx context.Context, materialID, userID
 	s.clearMaterialCache(ctx, materialID)
 
 	return downloadURL, nil
+}
+
+func (s *materialService) getDailyDownloadLimit(ctx context.Context) int {
+	if s.configRepo == nil {
+		return defaultDailyLimit
+	}
+
+	config, err := s.configRepo.GetSystemConfig(downloadDailyLimitKey)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			_ = s.configRepo.CreateSystemConfig(&model.SystemConfig{
+				ConfigKey:   downloadDailyLimitKey,
+				ConfigValue: strconv.Itoa(defaultDailyLimit),
+				Description: "每个用户每日最大下载次数",
+				Category:    "download",
+			})
+			return defaultDailyLimit
+		}
+		return defaultDailyLimit
+	}
+
+	limit, err := strconv.Atoi(strings.TrimSpace(config.ConfigValue))
+	if err != nil || limit < 0 {
+		return defaultDailyLimit
+	}
+	return limit
 }
 
 // SearchMaterials 搜索资料

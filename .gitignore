@@ -5,6 +5,7 @@ CLAUDE.md
 # Backend
 backend/logs/
 backend/bin/
+backend/configs/*.local.yaml
 
 # Frontend
 frontend/node_modules/

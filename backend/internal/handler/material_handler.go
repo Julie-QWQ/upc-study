@@ -410,6 +410,8 @@ func (h *MaterialHandler) GetDownloadURL(c *gin.Context) {
 			response.Error(c, response.ErrNotFound, err.Error())
 		case service.ErrAccessDenied:
 			response.Error(c, response.ErrForbidden, err.Error())
+		case service.ErrDownloadLimitExceeded:
+			response.Error(c, response.ErrForbidden, err.Error())
 		default:
 			response.Error(c, response.ErrInternal, err.Error())
 		}

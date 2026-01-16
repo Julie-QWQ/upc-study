@@ -92,6 +92,8 @@ export interface MaterialCategoryConfig {
   id: number
   code: string
   name: string
+  name_zh?: string
+  name_en?: string
   description?: string
   icon?: string
   sort_order: number

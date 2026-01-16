@@ -1,20 +1,37 @@
 <template>
-  <div class="auth-container">
-    <div class="auth-logo">
-      <h1><SiteName /></h1>
-      <p class="subtitle">{{ siteDescription }}</p>
-    </div>
+  <div class="auth-split">
+    <div class="auth-split-grid">
+      <section class="auth-intro">
+        <div>
+          <h1 class="auth-brand-title"><SiteName /></h1>
+          <p class="auth-brand-subtitle">{{ siteDescription }}</p>
+        </div>
+        <div>
+          <h2 class="auth-intro-heading">创建你的学习账号。</h2>
+          <p class="auth-intro-text">
+            上传、整理并共享学习资料，让学习更高效。
+          </p>
+          <ul class="auth-intro-list">
+            <li>快速上传与分类资料</li>
+            <li>随时查看下载与收藏记录</li>
+            <li>获取公告与审核通知</li>
+          </ul>
+        </div>
+      </section>
 
-    <div class="auth-card">
-      <h2 class="auth-title">注册</h2>
-      <p class="auth-description">创建您的账号，开始使用学习资料平台</p>
+      <section class="auth-panel">
+        <div class="auth-card">
+          <h2 class="auth-title">注册</h2>
+          <p class="auth-description">创建账号，开始使用学习资料平台</p>
 
-      <RegisterForm @success="handleRegisterSuccess" />
+          <RegisterForm @success="handleRegisterSuccess" />
 
-      <div class="auth-footer">
-        已有账号？
-        <router-link to="/login">立即登录</router-link>
-      </div>
+          <div class="auth-footer">
+            已有账号？
+            <router-link to="/login">立即登录</router-link>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 </template>
@@ -35,4 +52,4 @@ const handleRegisterSuccess = () => {
 
 <style scoped lang="scss">
 @import '@/assets/styles/auth.scss';
-</style>
+</style>

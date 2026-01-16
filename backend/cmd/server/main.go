@@ -45,9 +45,19 @@ func main() {
 		appEnv := os.Getenv("APP_ENV")
 		ginMode := os.Getenv("GIN_MODE")
 		if appEnv == "production" || ginMode == "release" {
-			configPath = "configs/config.prod.yaml"
+			localPath := "configs/config.prod.local.yaml"
+			if _, err := os.Stat(localPath); err == nil {
+				configPath = localPath
+			} else {
+				configPath = "configs/config.prod.yaml"
+			}
 		} else {
-			configPath = "configs/config.dev.yaml"
+			localPath := "configs/config.dev.local.yaml"
+			if _, err := os.Stat(localPath); err == nil {
+				configPath = localPath
+			} else {
+				configPath = "configs/config.dev.yaml"
+			}
 		}
 	}
 

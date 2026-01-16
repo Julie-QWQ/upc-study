@@ -5,6 +5,7 @@ import (
 
 	"github.com/study-upc/backend/internal/model"
 	"github.com/study-upc/backend/internal/repository"
+	"gorm.io/gorm"
 )
 
 var (
@@ -12,6 +13,11 @@ var (
 	ErrLastAdmin = errors.New("不能禁用/删除最后一个管理员")
 	// ErrCannotDeleteAdmin 不能删除管理员
 	ErrCannotDeleteAdmin = errors.New("不能删除管理员账户")
+)
+
+const (
+	downloadDailyLimitKeyConfig = "download_daily_limit"
+	defaultDailyLimitValue      = "20"
 )
 
 // AdminService 管理员服务接口
@@ -59,6 +65,7 @@ func (s *adminService) GetSystemConfig(key string) (*model.SystemConfig, error) 
 
 // ListSystemConfigs 获取系统配置列表
 func (s *adminService) ListSystemConfigs(req *model.SystemConfigListRequest) ([]model.SystemConfig, int64, error) {
+	s.ensureDownloadDailyLimitConfig()
 	return s.adminRepo.ListSystemConfigs(req)
 }
 
@@ -84,6 +91,22 @@ func (s *adminService) DeleteSystemConfig(key string) error {
 	return s.adminRepo.DeleteSystemConfig(key)
 }
 
+func (s *adminService) ensureDownloadDailyLimitConfig() {
+	_, err := s.adminRepo.GetSystemConfig(downloadDailyLimitKeyConfig)
+	if err == nil {
+		return
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return
+	}
+	_ = s.adminRepo.CreateSystemConfig(&model.SystemConfig{
+		ConfigKey:   downloadDailyLimitKeyConfig,
+		ConfigValue: defaultDailyLimitValue,
+		Description: "每个用户每日最大下载次数",
+		Category:    "download",
+	})
+}
+
 // ============ 用户管理 ============
 
 // ListUsers 获取用户列表
@@ -103,8 +126,22 @@ func (s *adminService) GetUserDetail(id uint) (*model.UserDetailResponse, error)
 		User: *user,
 	}
 
-	// 获取用户统计信息
-	// TODO: 实现用户统计查询
+	downloadTotal, err := s.adminRepo.CountUserDownloads(id)
+	if err != nil {
+		return nil, err
+	}
+	uploadTotal, err := s.adminRepo.CountUserUploads(id)
+	if err != nil {
+		return nil, err
+	}
+	favoriteTotal, err := s.adminRepo.CountUserFavorites(id)
+	if err != nil {
+		return nil, err
+	}
+
+	response.DownloadTotal = downloadTotal
+	response.UploadTotal = uploadTotal
+	response.FavoriteTotal = favoriteTotal
 
 	return response, nil
 }

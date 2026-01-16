@@ -22,6 +22,8 @@ var (
 
 // OSSClient OSS 客户端接口
 type OSSClient interface {
+	// TestConnection ?? OSS/MinIO ??
+	TestConnection(ctx context.Context) error
 	// GeneratePresignedUploadURL 生成预签名上传 URL
 	GeneratePresignedUploadURL(ctx context.Context, fileKey string, expiresIn time.Duration) (string, error)
 	// GeneratePresignedDownloadURL 生成预签名下载 URL
@@ -154,18 +156,18 @@ type OSSService interface {
 
 // ossService OSS 服务实现
 type ossService struct {
-	client         OSSClient
-	validator      *FileValidator
-	uploadExpireIn time.Duration
+	client           OSSClient
+	validator        *FileValidator
+	uploadExpireIn   time.Duration
 	downloadExpireIn time.Duration
 }
 
 // NewOSSService 创建 OSS 服务实例
 func NewOSSService(client OSSClient, maxFileSize int64, uploadExpireIn, downloadExpireIn time.Duration) OSSService {
 	return &ossService{
-		client:          client,
-		validator:       NewFileValidator(maxFileSize),
-		uploadExpireIn:  uploadExpireIn,
+		client:           client,
+		validator:        NewFileValidator(maxFileSize),
+		uploadExpireIn:   uploadExpireIn,
 		downloadExpireIn: downloadExpireIn,
 	}
 }

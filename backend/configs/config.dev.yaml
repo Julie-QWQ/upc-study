@@ -7,9 +7,9 @@ server:
 database:
   host: localhost
   port: 5432
-  user: study_upc
-  password: study_upc_password
-  dbname: study_upc
+  user: julie
+  password: 114514
+  dbname: upc_study
   max_open_conns: 10
   max_idle_conns: 5
 
@@ -28,8 +28,8 @@ oss:
   endpoint: "localhost:9000"
   access_key: "minioadmin"
   secret_key: "minioadmin"
-  bucket_name: "study-upc-dev"
-  region: "us-east-1"
+  bucket_name: "upc-study"
+  region: ""
   use_ssl: false
 
 log:

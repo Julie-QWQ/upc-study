@@ -1,3 +1,0 @@
--- 回滚: 删除 diy enum 值
--- 注意: PostgreSQL 不支持删除 enum 值,这是无法完全回滚的操作
--- 无法直接删除 enum 值: 'diy'

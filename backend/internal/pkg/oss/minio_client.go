@@ -27,6 +27,16 @@ type MinIOClient struct {
 	bucket string
 }
 
+// TestConnection ?? OSS/MinIO ??
+func (c *MinIOClient) TestConnection(ctx context.Context) error {
+	_, err := c.client.BucketExists(ctx, c.bucket)
+	if err != nil {
+		return fmt.Errorf("?? OSS/MinIO ????: %w", err)
+	}
+	return nil
+}
+
+
 // NewMinIOClient 创建 MinIO 客户端实例
 func NewMinIOClient(config *MinIOConfig) (*MinIOClient, error) {
 	// 初始化 MinIO 客户端

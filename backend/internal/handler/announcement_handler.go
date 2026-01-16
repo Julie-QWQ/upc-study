@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/study-upc/backend/internal/model"
+	"github.com/study-upc/backend/internal/middleware"
 	"github.com/study-upc/backend/internal/pkg/response"
 	"github.com/study-upc/backend/internal/service"
 )
@@ -168,7 +169,7 @@ func (h *AnnouncementHandler) UpdateAnnouncement(c *gin.Context) {
 		return
 	}
 
-	announcementResp, err := h.announcementService.UpdateAnnouncement(c.Request.Context(), uint(id), userID.(uint), &req)
+	announcementResp, err := h.announcementService.UpdateAnnouncement(c.Request.Context(), uint(id), userID.(uint), middleware.IsAdmin(c), &req)
 	if err != nil {
 		if err == service.ErrAnnouncementNotFound {
 			response.Error(c, response.ErrNotFound, "公告不存在")
@@ -204,7 +205,7 @@ func (h *AnnouncementHandler) DeleteAnnouncement(c *gin.Context) {
 		return
 	}
 
-	err = h.announcementService.DeleteAnnouncement(c.Request.Context(), uint(id), userID.(uint))
+	err = h.announcementService.DeleteAnnouncement(c.Request.Context(), uint(id), userID.(uint), middleware.IsAdmin(c))
 	if err != nil {
 		if err == service.ErrAnnouncementNotFound {
 			response.Error(c, response.ErrNotFound, "公告不存在")

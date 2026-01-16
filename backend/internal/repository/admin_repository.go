@@ -21,6 +21,9 @@ type AdminRepository interface {
 	UpdateUser(user *model.User) error
 	UpdateUserStatus(id uint, status string) error
 	DeleteUser(id uint) error
+	CountUserDownloads(userID uint) (int64, error)
+	CountUserUploads(userID uint) (int64, error)
+	CountUserFavorites(userID uint) (int64, error)
 }
 
 type adminRepository struct {
@@ -201,4 +204,31 @@ func (r *adminRepository) UpdateUserStatus(id uint, status string) error {
 // DeleteUser 删除用户 (软删除)
 func (r *adminRepository) DeleteUser(id uint) error {
 	return r.db.Delete(&model.User{}, id).Error
+}
+
+func (r *adminRepository) CountUserDownloads(userID uint) (int64, error) {
+	var count int64
+	err := r.db.Model(&model.DownloadRecord{}).Where("user_id = ?", userID).Count(&count).Error
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (r *adminRepository) CountUserUploads(userID uint) (int64, error) {
+	var count int64
+	err := r.db.Model(&model.Material{}).Where("uploader_id = ?", userID).Count(&count).Error
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (r *adminRepository) CountUserFavorites(userID uint) (int64, error) {
+	var count int64
+	err := r.db.Model(&model.Favorite{}).Where("user_id = ?", userID).Count(&count).Error
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
 }

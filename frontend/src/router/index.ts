@@ -109,7 +109,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/announcement/List.vue'),
         meta: { title: '公告列表', requiresAuth: true }
       },
-      // 管理员-管理后台路由
+      // 管理后台相关路由
       {
         path: 'admin/dashboard',
         name: 'AdminDashboard',
@@ -183,7 +183,7 @@ const router = createRouter({
 // 路由守卫
 router.beforeEach((to, from, next) => {
   // 设置页面标题
-  document.title = `${to.meta.title || 'Study-UPC'} - Study-UPC`
+  document.title = `${to.meta.title || 'UPC-DocHub'} | UPC-DocHub`
 
   // 初始化认证状态
   const authStore = useAuthStore()
@@ -218,3 +218,4 @@ router.beforeEach((to, from, next) => {
 })
 
 export default router
+
