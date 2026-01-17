@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/study-upc/backend/internal/model"
@@ -75,14 +76,15 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		// 记录登录失败的日志
 		_ = h.statisticsService.RecordLoginLog(0, c.ClientIP(), c.Request.UserAgent(), false)
 
-		switch err {
-		case service.ErrInvalidCredentials:
+		if errors.Is(err, service.ErrInvalidCredentials) {
 			response.Error(c, response.ErrInvalidCredentials, err.Error())
-		case service.ErrUserDisabled:
-			response.Error(c, response.ErrUserDisabled, err.Error())
-		default:
-			response.Error(c, response.ErrInternal, err.Error())
+			return
 		}
+		if errors.Is(err, service.ErrUserDisabled) {
+			response.Error(c, response.ErrUserDisabled, err.Error())
+			return
+		}
+		response.Error(c, response.ErrInternal, err.Error())
 		return
 	}
 
@@ -146,14 +148,15 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 
 	loginResp, err := h.authService.RefreshToken(c.Request.Context(), req.RefreshToken)
 	if err != nil {
-		switch err {
-		case service.ErrTokenExpired, service.ErrTokenInvalid, service.ErrTokenInBlacklist:
+		if errors.Is(err, service.ErrTokenExpired) || errors.Is(err, service.ErrTokenInvalid) || errors.Is(err, service.ErrTokenInBlacklist) {
 			response.Error(c, response.ErrInvalidToken, err.Error())
-		case service.ErrUserDisabled:
-			response.Error(c, response.ErrUserDisabled, err.Error())
-		default:
-			response.Error(c, response.ErrInternal, err.Error())
+			return
 		}
+		if errors.Is(err, service.ErrUserDisabled) {
+			response.Error(c, response.ErrUserDisabled, err.Error())
+			return
+		}
+		response.Error(c, response.ErrInternal, err.Error())
 		return
 	}
 

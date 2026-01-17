@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/study-upc/backend/internal/model"
 	"github.com/study-upc/backend/internal/repository"
@@ -148,15 +149,15 @@ func (s *adminService) GetUserDetail(id uint) (*model.UserDetailResponse, error)
 
 // UpdateUserStatus 更新用户状态
 func (s *adminService) UpdateUserStatus(id uint, status, reason string) error {
-	// 检查用户是否存在
+	// ????????
 	user, err := s.adminRepo.GetUserByID(id)
 	if err != nil {
 		return err
 	}
 
-	// 不能禁用最后一个管理员
+	// ???????????
 	if user.Role == model.RoleAdmin && status == string(model.StatusBanned) {
-		// 检查是否还有其他管理员
+		// ???????????
 		adminCount, err := s.userRepo.CountByRole(model.RoleAdmin)
 		if err != nil {
 			return err
@@ -166,8 +167,15 @@ func (s *adminService) UpdateUserStatus(id uint, status, reason string) error {
 		}
 	}
 
-	// 更新用户状态
-	return s.adminRepo.UpdateUserStatus(id, status)
+	reason = strings.TrimSpace(reason)
+	if status != string(model.StatusBanned) {
+		reason = ""
+	} else if reason == "" {
+		reason = "???????"
+	}
+
+	// ??????
+	return s.adminRepo.UpdateUserStatus(id, status, reason)
 }
 
 // UpdateUserInfo 更新用户信息

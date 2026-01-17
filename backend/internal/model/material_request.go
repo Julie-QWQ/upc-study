@@ -10,7 +10,7 @@ import (
 type CreateMaterialRequest struct {
 	Title       string           `json:"title" binding:"required,min=2,max=200"`
 	Description string           `json:"description" binding:"max=2000"`
-	Category    MaterialCategory `json:"category" binding:"required"` // 移除 oneof,改为动态验证
+	Category    MaterialCategoryType `json:"category" binding:"required"` // 移除 oneof,改为动态验证
 	CourseName  string           `json:"course_name" binding:"required,max=100"`
 	FileName    string           `json:"file_name" binding:"required,max=255"`
 	FileSize    int64            `json:"file_size" binding:"required,min=1,max=536870912"` // 最大 512MB
@@ -22,7 +22,7 @@ type CreateMaterialRequest struct {
 type UpdateMaterialRequest struct {
 	Title       string           `json:"title" binding:"required,min=2,max=200"`
 	Description string           `json:"description" binding:"max=2000"`
-	Category    MaterialCategory `json:"category" binding:"required"` // 移除 oneof,改为动态验证
+	Category    MaterialCategoryType `json:"category" binding:"required"` // 移除 oneof,改为动态验证
 	CourseName  string           `json:"course_name" binding:"required,max=100"`
 }
 
@@ -30,7 +30,7 @@ type UpdateMaterialRequest struct {
 type MaterialListRequest struct {
 	Page         int              `form:"page,default=1" binding:"min=1"`
 	PageSize     int              `form:"page_size,default=20" binding:"min=1,max=100"`
-	Category     MaterialCategory `form:"category" binding:"omitempty"` // 移除 oneof,改为动态验证
+	Category     MaterialCategoryType `form:"category" binding:"omitempty"` // 移除 oneof,改为动态验证
 	CourseName   string           `form:"course_name" binding:"omitempty,max=100"`
 	Status       MaterialStatus   `form:"status" binding:"omitempty,oneof=pending approved rejected deleted"`
 	Keyword      string           `form:"keyword" binding:"omitempty,max=100"`
@@ -51,7 +51,7 @@ type MaterialResponse struct {
 	ID              uint             `json:"id"`
 	Title           string           `json:"title"`
 	Description     string           `json:"description"`
-	Category        MaterialCategory `json:"category"`
+	Category        MaterialCategoryType `json:"category"`
 	CourseName      string           `json:"course_name"`
 	UploaderID      uint             `json:"uploader_id"`
 	Uploader        *UserInfo        `json:"uploader,omitempty"`

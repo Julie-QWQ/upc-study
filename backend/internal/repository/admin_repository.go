@@ -19,7 +19,7 @@ type AdminRepository interface {
 	GetUserByID(id uint) (*model.User, error)
 	GetUserByUsername(username string) (*model.User, error)
 	UpdateUser(user *model.User) error
-	UpdateUserStatus(id uint, status string) error
+	UpdateUserStatus(id uint, status, reason string) error
 	DeleteUser(id uint) error
 	CountUserDownloads(userID uint) (int64, error)
 	CountUserUploads(userID uint) (int64, error)
@@ -195,10 +195,19 @@ func (r *adminRepository) UpdateUser(user *model.User) error {
 }
 
 // UpdateUserStatus 更新用户状态
-func (r *adminRepository) UpdateUserStatus(id uint, status string) error {
+func (r *adminRepository) UpdateUserStatus(id uint, status, reason string) error {
+	updates := map[string]any{
+		"status": status,
+	}
+	if reason != "" {
+		updates["ban_reason"] = reason
+	} else {
+		updates["ban_reason"] = nil
+	}
+
 	return r.db.Model(&model.User{}).
 		Where("id = ?", id).
-		Update("status", status).Error
+		Updates(updates).Error
 }
 
 // DeleteUser 删除用户 (软删除)

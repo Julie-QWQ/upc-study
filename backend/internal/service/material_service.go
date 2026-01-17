@@ -40,7 +40,7 @@ type MaterialService interface {
 	// CreateMaterial 创建资料
 	CreateMaterial(ctx context.Context, userID uint, req *model.CreateMaterialRequest) (*model.MaterialResponse, error)
 	// UpdateMaterial 更新资料
-	UpdateMaterial(ctx context.Context, materialID, userID uint, req *model.UpdateMaterialRequest) (*model.MaterialResponse, error)
+	UpdateMaterial(ctx context.Context, materialID, userID uint, userRole string, req *model.UpdateMaterialRequest) (*model.MaterialResponse, error)
 	// GetMaterial 获取资料详情
 	GetMaterial(ctx context.Context, materialID, currentUserID uint) (*model.MaterialResponse, error)
 	// ListMaterials 获取资料列表
@@ -134,7 +134,7 @@ func (s *materialService) CreateMaterial(ctx context.Context, userID uint, req *
 }
 
 // UpdateMaterial 更新资料
-func (s *materialService) UpdateMaterial(ctx context.Context, materialID, userID uint, req *model.UpdateMaterialRequest) (*model.MaterialResponse, error) {
+func (s *materialService) UpdateMaterial(ctx context.Context, materialID, userID uint, userRole string, req *model.UpdateMaterialRequest) (*model.MaterialResponse, error) {
 	// 验证资料类型(动态验证)
 	_, err := s.categoryRepo.GetByCode(string(req.Category))
 	if err != nil {
@@ -150,13 +150,16 @@ func (s *materialService) UpdateMaterial(ctx context.Context, materialID, userID
 		return nil, fmt.Errorf("获取资料失败: %w", err)
 	}
 
-	// 检查权限：只有上传者可以修改
-	if material.UploaderID != userID {
+	// 检查权限
+	isAdmin := userRole == "admin"
+	isUploader := material.UploaderID == userID
+
+	if !isAdmin && !isUploader {
 		return nil, ErrAccessDenied
 	}
 
-	// 检查状态：只有待审核或已拒绝的资料可以修改
-	if material.Status == model.StatusApproved {
+	// 非管理员只能修改待审核或已拒绝的资料
+	if !isAdmin && material.Status == model.StatusApproved {
 		return nil, ErrMaterialAlreadyApproved
 	}
 
@@ -165,7 +168,11 @@ func (s *materialService) UpdateMaterial(ctx context.Context, materialID, userID
 	material.Description = req.Description
 	material.Category = req.Category
 	material.CourseName = req.CourseName
-	material.Status = model.StatusPending // 重新提交审核
+
+	// 管理员修改不改变状态,学委修改重新提交审核
+	if !isAdmin {
+		material.Status = model.StatusPending
+	}
 
 	// 更新搜索向量
 	material.SearchVector = s.generateSearchVector(req.Title, req.Description, req.CourseName)

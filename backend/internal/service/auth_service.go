@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/study-upc/backend/internal/model"
@@ -137,6 +138,10 @@ func (s *authService) Login(ctx context.Context, req *model.LoginRequest) (*mode
 
 	// 检查用户状态
 	if user.Status == model.StatusBanned {
+		reason := strings.TrimSpace(user.BanReason)
+		if reason != "" {
+			return nil, fmt.Errorf("%w: %s", ErrUserDisabled, reason)
+		}
 		return nil, ErrUserDisabled
 	}
 
@@ -210,6 +215,10 @@ func (s *authService) RefreshToken(ctx context.Context, refreshToken string) (*m
 
 	// 检查用户状态
 	if user.Status == model.StatusBanned {
+		reason := strings.TrimSpace(user.BanReason)
+		if reason != "" {
+			return nil, fmt.Errorf("%w: %s", ErrUserDisabled, reason)
+		}
 		return nil, ErrUserDisabled
 	}
 

@@ -31,6 +31,13 @@ export const materialApi = {
   },
 
   /**
+   * 获取已审核资料列表（管理员）
+   */
+  getReviewedMaterials(params: MaterialListParams): Promise<ApiResponse<PaginateData<Material>>> {
+    return request.get('/admin/materials/reviewed', { params })
+  },
+
+  /**
    * 搜索资料
    */
   searchMaterials(params: MaterialListParams): Promise<ApiResponse<PaginateData<Material>>> {

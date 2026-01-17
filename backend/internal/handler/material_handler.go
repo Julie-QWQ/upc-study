@@ -96,14 +96,20 @@ func (h *MaterialHandler) UpdateMaterial(c *gin.Context) {
 		return
 	}
 
-	// 从上下文获取用户 ID
+	// 从上下文获取用户 ID 和角色
 	userID, exists := c.Get("user_id")
 	if !exists {
 		response.Error(c, response.ErrUnauthorized, "未认证")
 		return
 	}
 
-	materialResp, err := h.materialService.UpdateMaterial(c.Request.Context(), uint(materialID), userID.(uint), &req)
+	userRole, exists := c.Get("user_role")
+	if !exists {
+		response.Error(c, response.ErrUnauthorized, "未认证")
+		return
+	}
+
+	materialResp, err := h.materialService.UpdateMaterial(c.Request.Context(), uint(materialID), userID.(uint), userRole.(string), &req)
 	if err != nil {
 		switch err {
 		case service.ErrMaterialNotFound:
@@ -179,6 +185,47 @@ func (h *MaterialHandler) ListMaterials(c *gin.Context) {
 		response.Error(c, response.ErrInvalidParams, err.Error())
 		return
 	}
+
+	// 获取当前用户 ID（可能为空）
+	var currentUserID uint
+	if userID, exists := c.Get("user_id"); exists {
+		currentUserID = userID.(uint)
+	}
+
+	// 获取当前用户角色（可能为空）
+	var currentUserRole string
+	if role, exists := c.Get("user_role"); exists {
+		currentUserRole = role.(string)
+	}
+
+	listResp, err := h.materialService.ListMaterials(c.Request.Context(), &req, currentUserID, currentUserRole)
+	if err != nil {
+		response.Error(c, response.ErrInternal, err.Error())
+		return
+	}
+
+	response.Success(c, listResp)
+}
+
+// ListReviewedMaterials 获取已审核资料列表(管理员专用)
+// @Summary 获取已审核资料列表
+// @Description 管理员获取已审核资料列表
+// @Tags 资料
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "页码" default(1)
+// @Param page_size query int false "每页数量" default(20)
+// @Param sort_by query string false "排序字段" default(created_at)
+// @Param sort_order query string false "排序方向" default(desc)
+// @Success 200 {object} response.Response{data=model.MaterialListResponse}
+// @Router /api/v1/admin/materials/reviewed [get]
+func (h *MaterialHandler) ListReviewedMaterials(c *gin.Context) {
+	var req model.MaterialListRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		response.Error(c, response.ErrInvalidParams, err.Error())
+		return
+	}
+	req.ReviewedOnly = true
 
 	// 获取当前用户 ID（可能为空）
 	var currentUserID uint

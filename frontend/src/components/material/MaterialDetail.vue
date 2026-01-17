@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useMaterialStore } from '@/stores/material'
+import { useMaterialCategoryStore } from '@/stores/materialCategory'
 import { useAuth } from '@/composables/useAuth'
 import type { Material } from '@/types'
 
@@ -13,6 +14,7 @@ interface Props {
 const props = defineProps<Props>()
 const router = useRouter()
 const materialStore = useMaterialStore()
+const materialCategoryStore = useMaterialCategoryStore()
 const { isAdmin, isCommittee, user } = useAuth()
 
 const loading = computed(() => materialStore.loading)
@@ -21,18 +23,6 @@ const showDropdown = ref(false)
 const showReportModal = ref(false)
 const deleteDialogVisible = ref(false)
 const reportReason = ref('')
-
-// 资料分类映射
-const categoryMap: Record<string, string> = {
-  textbook: '教材',
-  reference: '参考书',
-  exam_paper: '试卷',
-  note: '笔记',
-  exercise: '习题',
-  experiment: '实验指导',
-  thesis: '论文',
-  other: '其他'
-}
 
 // 资料状态映射
 const statusMap: Record<string, { text: string; type: any }> = {
@@ -53,7 +43,8 @@ const formatFileSize = (bytes: number): string => {
 
 // 资料分类文本
 const categoryText = computed(() => {
-  return material.value ? categoryMap[material.value.category] : '其他'
+  if (!material.value) return '其他'
+  return materialCategoryStore.getCategoryName(material.value.category)
 })
 
 // 资料状态信息
@@ -210,7 +201,9 @@ const formatDate = (dateString: string): string => {
 }
 
 // 点击外部关闭下拉菜单
-onMounted(() => {
+onMounted(async () => {
+  // 加载分类数据
+  await materialCategoryStore.fetchActiveCategories()
   loadDetail()
 
   document.addEventListener('click', (e) => {

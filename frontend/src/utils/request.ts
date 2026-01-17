@@ -69,8 +69,12 @@ service.interceptors.response.use(
     }
 
     // 业务错误
-    ElMessage.error(message || '请求失败')
-    return Promise.reject(new Error(message || '请求失败'))
+    if (code !== RESPONSE_CODE.USER_DISABLED) {
+      ElMessage.error(message || '请求失败')
+    }
+    const error = new Error(message || '请求失败') as Error & { code?: number }
+    error.code = code
+    return Promise.reject(error)
   },
   error => {
     // HTTP 错误

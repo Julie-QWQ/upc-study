@@ -184,75 +184,169 @@ onMounted(async () => {
         <!-- 页面标题 -->
         <header class="stream-header">
           <h1 class="page-title">资料搜索</h1>
+          <p class="page-subtitle">探索海量学习资源</p>
         </header>
 
-        <!-- 左右布局 -->
-        <div class="search-layout">
-          <!-- 左侧结果列表 -->
-          <div class="results-area">
-            <!-- 当前筛选条件标签 -->
-            <div v-if="selectedCategory || courseInput || keyword" class="active-filters">
-              <span class="filters-label">当前筛选:</span>
-              <span v-if="keyword" class="filter-tag">
-                关键词: {{ keyword }}
-                <button class="tag-remove" @click="keyword = ''; handleSearch()">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M18 6L6 18M6 6l12 12"/>
-                  </svg>
-                </button>
-              </span>
-              <span v-if="selectedCategory" class="filter-tag">
-                分类: {{ categoryLabel(selectedCategory) }}
-                <button class="tag-remove" @click="selectedCategory = ''; handleCategoryChange()">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M18 6L6 18M6 6l12 12"/>
-                  </svg>
-                </button>
-              </span>
-              <span v-if="courseInput" class="filter-tag">
-                课程: {{ courseInput }}
-                <button class="tag-remove" @click="courseInput = ''; handleCourseChange()">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M18 6L6 18M6 6l12 12"/>
-                  </svg>
-                </button>
-              </span>
-            </div>
-
-            <!-- 加载状态 -->
-            <div v-if="materialStore.loading" class="loading-state">
-              <div v-for="i in 6" :key="i" class="skeleton-card"></div>
-            </div>
-
-            <!-- 空状态 -->
-            <div v-else-if="materialStore.materials.length === 0" class="empty-state">
-              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <!-- 搜索区域 -->
+        <section class="search-section">
+          <!-- 课程名称筛选 -->
+          <div class="course-filter">
+            <div class="course-search-bar">
+              <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="11" cy="11" r="8"/>
                 <path d="m21 21-4.35-4.35"/>
               </svg>
-              <h2>未找到相关资料</h2>
-              <p>尝试调整搜索关键词或筛选条件</p>
-              <button class="reset-btn-large" @click="handleReset">清除所有筛选</button>
+              <input
+                v-model="courseInput"
+                type="text"
+                placeholder="输入课程名称筛选"
+                class="search-input"
+                @change="handleCourseChange"
+              />
+            </div>
+            <button class="course-search-btn" @click="handleSearch">
+              搜索
+            </button>
+          </div>
+
+          <!-- 快速筛选标签 -->
+          <div class="quick-filters">
+            <div class="filter-group">
+              <span class="filter-group-label">分类:</span>
+              <div class="filter-chips">
+                <button
+                  v-for="cat in categories.slice(0, 8)"
+                  :key="cat.value"
+                  :class="['chip', { active: selectedCategory === cat.value }]"
+                  @click="handleCategoryClick(cat.value)"
+                >
+                  {{ cat.label }}
+                </button>
+                <el-dropdown trigger="click" @command="handleCategoryClick">
+                  <button class="chip chip-more">
+                    更多
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="m6 9 6 6 6-6"/>
+                    </svg>
+                  </button>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item
+                        v-for="cat in categories.slice(8)"
+                        :key="cat.value"
+                        :command="cat.value"
+                        :class="{ 'is-active': selectedCategory === cat.value }"
+                      >
+                        {{ cat.label }}
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </div>
             </div>
 
-            <!-- 搜索结果 -->
-            <div v-else>
-              <div class="results-header">
-                <h2 class="results-title">搜索结果</h2>
-                <span class="results-count">共 {{ materialStore.total }} 条</span>
+            <div class="filter-group">
+              <span class="filter-group-label">排序:</span>
+              <div class="filter-chips">
+                <button
+                  v-for="sort in sortOptions"
+                  :key="sort.value"
+                  :class="['chip', { active: selectedSort === sort.value }]"
+                  @click="handleSortClick(sort.value)"
+                >
+                  {{ sort.label }}
+                </button>
               </div>
+            </div>
+          </div>
 
-              <div class="materials-list">
-                <MaterialCard
-                  v-for="material in materialStore.materials"
-                  :key="material.id"
-                  :material="material"
-                />
-              </div>
+          <!-- 关键词搜索 -->
+          <div class="keyword-filter">
+            <label class="keyword-label">关键词搜索</label>
+            <input
+              v-model="keyword"
+              type="text"
+              placeholder="搜索资料标题、描述..."
+              class="keyword-input"
+              @keyup.enter="handleSearch"
+            />
+          </div>
+
+          <!-- 当前筛选条件 -->
+          <div v-if="selectedCategory || courseInput || keyword" class="active-filters">
+            <div class="active-tags">
+              <span v-if="courseInput" class="tag">
+                课程: {{ courseInput }}
+                <button class="tag-close" @click="courseInput = ''; handleCourseChange()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </span>
+              <span v-if="selectedCategory" class="tag">
+                分类: {{ categoryLabel(selectedCategory) }}
+                <button class="tag-close" @click="selectedCategory = ''; handleCategoryChange()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </span>
+              <span v-if="keyword" class="tag">
+                关键词: {{ keyword }}
+                <button class="tag-close" @click="keyword = ''; handleSearch()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </span>
+            </div>
+            <button class="clear-all-btn" @click="handleReset">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 12"/>
+                <path d="M3 3v9h9"/>
+              </svg>
+              清除筛选
+            </button>
+          </div>
+        </section>
+
+        <!-- 搜索结果 -->
+        <section class="results-section">
+          <!-- 加载状态 -->
+          <div v-if="materialStore.loading" class="loading-state">
+            <div v-for="i in 6" :key="i" class="skeleton-card"></div>
+          </div>
+
+          <!-- 空状态 -->
+          <div v-else-if="materialStore.materials.length === 0" class="empty-state">
+            <div class="empty-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.35-4.35"/>
+              </svg>
+            </div>
+            <h2 class="empty-title">未找到相关资料</h2>
+            <p class="empty-desc">尝试调整搜索关键词或筛选条件</p>
+            <button class="empty-action" @click="handleReset">清除所有筛选</button>
+          </div>
+
+          <!-- 结果列表 -->
+          <div v-else class="results-content">
+            <div class="results-info">
+              <h2 class="results-title">搜索结果</h2>
+              <span class="results-count">{{ materialStore.total }} 条资料</span>
+            </div>
+
+            <div class="materials-list">
+              <MaterialCard
+                v-for="material in materialStore.materials"
+                :key="material.id"
+                :material="material"
+              />
             </div>
 
             <!-- 分页 -->
-            <div v-if="materialStore.total > 0" class="pagination-section">
+            <div v-if="materialStore.total > materialStore.size" class="pagination-section">
               <el-pagination
                 :current-page="materialStore.page"
                 :page-size="materialStore.size"
@@ -262,86 +356,7 @@ onMounted(async () => {
               />
             </div>
           </div>
-
-          <!-- 右侧筛选面板 -->
-          <aside class="filters-sidebar">
-            <div class="filter-panel">
-              <!-- 课程名称 -->
-              <div class="filter-group">
-                <label class="filter-label">课程名称</label>
-                <input
-                  v-model="courseInput"
-                  type="text"
-                  placeholder="输入课程名称"
-                  class="course-filter-input"
-                  @change="handleCourseChange"
-                />
-              </div>
-
-              <!-- 分类筛选 -->
-              <div class="filter-group">
-                <label class="filter-label">资料分类</label>
-                <div class="category-list">
-                  <button
-                    v-for="cat in categories"
-                    :key="cat.value"
-                    type="button"
-                    :class="['category-item', { active: selectedCategory === cat.value }]"
-                    @click="handleCategoryClick(cat.value)"
-                  >
-                    {{ cat.label }}
-                  </button>
-                </div>
-              </div>
-
-              <!-- 搜索框 -->
-              <div class="filter-group">
-                <label class="filter-label">关键词搜索</label>
-                <div class="search-input-wrapper">
-                  <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="11" cy="11" r="8"/>
-                    <path d="m21 21-4.35-4.35"/>
-                  </svg>
-                  <input
-                    v-model="keyword"
-                    type="text"
-                    placeholder="搜索标题、描述..."
-                    class="search-input"
-                    @keyup.enter="handleSearch"
-                  />
-                </div>
-                <button class="search-submit-btn" @click="handleSearch">
-                  搜索
-                </button>
-              </div>
-
-              <!-- 排序方式 -->
-              <div class="filter-group">
-                <label class="filter-label">排序方式</label>
-                <div class="sort-list">
-                  <button
-                    v-for="sort in sortOptions"
-                    :key="sort.value"
-                    type="button"
-                    :class="['sort-item', { active: selectedSort === sort.value }]"
-                    @click="handleSortClick(sort.value)"
-                  >
-                    {{ sort.label }}
-                  </button>
-                </div>
-              </div>
-
-              <!-- 重置按钮 -->
-              <button v-if="selectedCategory || courseInput || keyword" class="reset-filters-btn" @click="handleReset">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 12"/>
-                  <path d="M3 3v9h9"/>
-                </svg>
-                清除筛选
-              </button>
-            </div>
-          </aside>
-        </div>
+        </section>
       </main>
     </div>
   </div>
@@ -355,7 +370,7 @@ onMounted(async () => {
 }
 
 .page-container {
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 32px 24px;
 }
@@ -364,269 +379,241 @@ onMounted(async () => {
   max-width: 100%;
 }
 
+// 页面头部
 .stream-header {
-  margin-bottom: 24px;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #f2f2f2;
 
   .page-title {
-    font-size: 28px;
+    font-size: 32px;
     font-weight: 700;
-    color: #111827;
+    color: #1a1a1a;
+    margin: 0 0 8px 0;
+    letter-spacing: -0.02em;
+  }
+
+  .page-subtitle {
+    font-size: 15px;
+    color: #6b7280;
     margin: 0;
   }
 }
 
-.search-layout {
-  display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 32px;
-  align-items: start;
+// 搜索区域
+.search-section {
+  background: #ffffff;
+  border: 1px solid #f2f2f2;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
 }
 
-// 右侧筛选面板
-.filters-sidebar {
-  position: sticky;
-  top: 24px;
+// 课程筛选
+.course-filter {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
 
-  .filter-panel {
-    background: #ffffff;
+  .course-search-bar {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #f9fafb;
     border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 20px;
+    border-radius: 8px;
+    transition: all 0.2s;
 
-    .filter-group {
-      margin-bottom: 24px;
-
-      &:last-child {
-        margin-bottom: 0;
-      }
-
-      .filter-label {
-        display: block;
-        font-size: 13px;
-        font-weight: 600;
-        color: #374151;
-        margin-bottom: 10px;
-      }
-
-      // 搜索框
-      .search-input-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 10px 12px;
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        transition: all 0.2s;
-
-        &:focus-within {
-          border-color: #111827;
-        }
-
-        .search-icon {
-          flex-shrink: 0;
-          color: #9ca3af;
-        }
-
-        .search-input {
-          flex: 1;
-          border: none;
-          background: transparent;
-          font-size: 14px;
-          color: #111827;
-          outline: none;
-
-          &::placeholder {
-            color: #9ca3af;
-          }
-        }
-      }
-
-      .search-submit-btn {
-        width: 100%;
-        margin-top: 8px;
-        padding: 10px;
-        background: #111827;
-        color: #ffffff;
-        border: none;
-        border-radius: 8px;
-        font-size: 14px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s;
-
-        &:hover {
-          background: #000000;
-        }
-      }
-
-      // 分类列表
-      .category-list {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-
-        .category-item {
-          padding: 8px 12px;
-          background: #ffffff;
-          border: 1px solid #e5e7eb;
-          border-radius: 8px;
-          font-size: 14px;
-          color: #6b7280;
-          cursor: pointer;
-          transition: all 0.2s;
-          text-align: left;
-          width: 100%;
-          display: block;
-          position: relative;
-          z-index: 1;
-
-          &:hover {
-            border-color: #111827;
-            color: #111827;
-          }
-
-          &.active {
-            background: #111827;
-            border-color: #111827;
-            color: #ffffff;
-            font-weight: 500;
-          }
-        }
-      }
-
-      // 课程输入框
-      .course-filter-input {
-        width: 100%;
-        padding: 10px 12px;
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        font-size: 14px;
-        color: #111827;
-        outline: none;
-        transition: all 0.2s;
-
-        &:focus {
-          border-color: #111827;
-        }
-
-        &::placeholder {
-          color: #9ca3af;
-        }
-      }
-
-      // 排序列表
-      .sort-list {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-
-        .sort-item {
-          padding: 8px 12px;
-          background: #ffffff;
-          border: 1px solid #e5e7eb;
-          border-radius: 8px;
-          font-size: 14px;
-          color: #6b7280;
-          cursor: pointer;
-          transition: all 0.2s;
-          text-align: left;
-          width: 100%;
-          display: block;
-          position: relative;
-          z-index: 1;
-
-          &:hover {
-            border-color: #111827;
-            color: #111827;
-          }
-
-          &.active {
-            background: #111827;
-            border-color: #111827;
-            color: #ffffff;
-            font-weight: 500;
-          }
-        }
-      }
+    &:focus-within {
+      background: #ffffff;
+      border-color: #1a1a1a;
+      box-shadow: 0 0 0 3px rgba(26, 26, 26, 0.05);
     }
 
-    .reset-filters-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      width: 100%;
-      padding: 10px;
-      background: #ffffff;
-      border: 1px solid #dc2626;
-      color: #dc2626;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
+    .search-icon {
+      flex-shrink: 0;
+      color: #9ca3af;
+    }
 
-      &:hover {
-        background: #dc2626;
-        color: #ffffff;
+    .search-input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-size: 15px;
+      color: #1a1a1a;
+      outline: none;
+
+      &::placeholder {
+        color: #9ca3af;
       }
+    }
+  }
+
+  .course-search-btn {
+    padding: 10px 24px;
+    background: #1a1a1a;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+
+    &:hover {
+      background: #000000;
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+  }
+}
+
+// 快速筛选
+.quick-filters {
+  margin-bottom: 24px;
+
+  .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    .filter-group-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #374151;
+      white-space: nowrap;
+    }
+
+    .filter-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      flex: 1;
+    }
+  }
+
+  .chip {
+    padding: 6px 12px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+
+    &:hover {
+      background: #ffffff;
+      border-color: #1a1a1a;
+      color: #1a1a1a;
+    }
+
+    &.active {
+      background: #1a1a1a;
+      border-color: #1a1a1a;
+      color: #ffffff;
+    }
+
+    &.chip-more {
+      color: #1a1a1a;
 
       svg {
-        width: 16px;
-        height: 16px;
+        width: 10px;
+        height: 10px;
       }
     }
   }
 }
 
-// 左侧结果区域
-.results-area {
-  flex: 1;
-  min-width: 0;
+// 关键词搜索
+.keyword-filter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
 
-  .active-filters {
+  .keyword-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    white-space: nowrap;
+  }
+
+  .keyword-input {
+    flex: 1;
+    padding: 10px 14px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #1a1a1a;
+    outline: none;
+    transition: all 0.2s;
+
+    &:focus {
+      border-color: #1a1a1a;
+      box-shadow: 0 0 0 3px rgba(26, 26, 26, 0.05);
+    }
+
+    &::placeholder {
+      color: #9ca3af;
+    }
+  }
+}
+
+// 当前筛选标签
+.active-filters {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 4px;
+
+  .active-tags {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-bottom: 20px;
-    padding: 12px 16px;
-    background: #f3f4f6;
-    border-radius: 8px;
+    flex: 1;
 
-    .filters-label {
-      font-size: 13px;
-      font-weight: 600;
-      color: #6b7280;
-      align-self: center;
-    }
-
-    .filter-tag {
+    .tag {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 4px 10px;
-      background: #111827;
+      padding: 6px 10px;
+      background: #1a1a1a;
       color: #ffffff;
       border-radius: 6px;
       font-size: 13px;
       font-weight: 500;
 
-      .tag-remove {
+      .tag-close {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 14px;
-        height: 14px;
-        background: rgba(255, 255, 255, 0.2);
+        width: 16px;
+        height: 16px;
+        background: rgba(255, 255, 255, 0.15);
         border: none;
-        border-radius: 2px;
+        border-radius: 4px;
         cursor: pointer;
-        transition: background 0.2s;
+        transition: all 0.2s;
 
         &:hover {
-          background: rgba(255, 255, 255, 0.3);
+          background: rgba(255, 255, 255, 0.25);
         }
 
         svg {
@@ -637,92 +624,150 @@ onMounted(async () => {
     }
   }
 
-  .loading-state {
+  .clear-all-btn {
     display: flex;
-    flex-direction: column;
-    gap: 16px;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: #ffffff;
+    border: 1px solid #dc2626;
+    color: #dc2626;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
 
-    .skeleton-card {
-      height: 200px;
-      background: linear-gradient(90deg, #f5f5f5 25%, #e8e8e8 50%, #f5f5f5 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.5s infinite;
-      border-radius: 8px;
+    &:hover {
+      background: #dc2626;
+      color: #ffffff;
     }
-  }
-
-  @keyframes shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-  }
-
-  .empty-state {
-    text-align: center;
-    padding: 80px 40px;
-    background: #f9fafb;
-    border-radius: 12px;
 
     svg {
-      color: #d1d5db;
-      margin-bottom: 24px;
+      width: 14px;
+      height: 14px;
     }
+  }
+}
 
-    h2 {
-      font-size: 22px;
-      font-weight: 600;
-      color: #111827;
-      margin: 0 0 8px 0;
-    }
+// 搜索结果区域
+.results-section {
+  background: #ffffff;
+}
 
-    p {
-      font-size: 15px;
-      color: #9ca3af;
-      margin: 0 0 24px 0;
-    }
+// 加载状态
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 
-    .reset-btn-large {
-      padding: 10px 24px;
-      background: #111827;
-      color: #ffffff;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
+  .skeleton-card {
+    height: 160px;
+    background: linear-gradient(90deg, #f5f5f5 25%, #e8e8e8 50%, #f5f5f5 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 8px;
+  }
+}
 
-      &:hover {
-        background: #000000;
-      }
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+// 空状态
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 1px solid #f2f2f2;
+
+  .empty-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    background: #ffffff;
+    border-radius: 50%;
+    margin-bottom: 24px;
+    color: #d1d5db;
+    border: 2px solid #f2f2f2;
+
+    svg {
+      width: 40px;
+      height: 40px;
     }
   }
 
-  .results-header {
+  .empty-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0 0 8px 0;
+  }
+
+  .empty-desc {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0 0 24px 0;
+  }
+
+  .empty-action {
+    padding: 10px 24px;
+    background: #1a1a1a;
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: #000000;
+    }
+  }
+}
+
+// 结果内容
+.results-content {
+  .results-info {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f2f2f2;
 
     .results-title {
       font-size: 20px;
       font-weight: 600;
-      color: #111827;
+      color: #1a1a1a;
       margin: 0;
     }
 
     .results-count {
       font-size: 14px;
-      color: #9ca3af;
+      color: #6b7280;
+      background: #f9fafb;
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid #f2f2f2;
     }
   }
 
   .materials-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 16px;
   }
 }
 
+// 分页
 .pagination-section {
   margin-top: 40px;
   padding-top: 24px;
@@ -731,41 +776,85 @@ onMounted(async () => {
   justify-content: center;
 }
 
+// Element Plus 下拉菜单 Substack 风格
+:deep(.el-dropdown-menu) {
+  background: #ffffff !important;
+  border: 1px solid #f2f2f2 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  padding: 6px !important;
+  min-width: 140px !important;
+
+  .el-dropdown-menu__item,
+  .el-dropdown-menu-item {
+    padding: 8px 12px !important;
+    border-radius: 6px !important;
+    font-size: 14px !important;
+    color: #1a1a1a !important;
+    transition: all 0.15s !important;
+    line-height: 1.5 !important;
+
+    &:hover {
+      background: #f9fafb !important;
+      color: #1a1a1a !important;
+    }
+
+    &.is-active {
+      background: #1a1a1a !important;
+      color: #ffffff !important;
+      font-weight: 500 !important;
+    }
+  }
+}
+
+// Element Plus 下拉菜单项的额外样式覆盖
+:deep(.el-dropdown-menu li) {
+  padding: 8px 12px !important;
+  border-radius: 6px !important;
+  font-size: 14px !important;
+  color: #1a1a1a !important;
+  transition: all 0.15s !important;
+  line-height: 1.5 !important;
+
+  &:hover {
+    background: #f9fafb !important;
+    color: #1a1a1a !important;
+  }
+
+  &.is-active {
+    background: #1a1a1a !important;
+    color: #ffffff !important;
+    font-weight: 500 !important;
+  }
+}
+
+// Element Plus 分页 Substack 风格
 :deep(.el-pagination) {
   .btn-prev,
   .btn-next,
   .el-pager li {
-    background: none;
-    border: none;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
     font-weight: 500;
     color: #6b7280;
+    transition: all 0.2s;
 
     &:hover {
-      color: #111827;
+      border-color: #1a1a1a;
+      color: #1a1a1a;
     }
 
     &.active {
-      color: #111827;
+      background: #1a1a1a;
+      border-color: #1a1a1a;
+      color: #ffffff;
       font-weight: 600;
     }
   }
 }
 
 // 响应式设计
-@media (max-width: 1024px) {
-  .search-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .filters-sidebar {
-    position: static;
-
-    .filter-panel {
-      margin-bottom: 24px;
-    }
-  }
-}
-
 @media (max-width: 768px) {
   .page-container {
     padding: 24px 16px;
@@ -773,14 +862,100 @@ onMounted(async () => {
 
   .stream-header {
     .page-title {
-      font-size: 24px;
+      font-size: 28px;
+    }
+
+    .page-subtitle {
+      font-size: 14px;
     }
   }
 
-  .results-header {
+  .search-section {
+    padding: 20px;
+  }
+
+  .course-filter {
+    flex-direction: column;
+
+    .course-search-btn {
+      width: 100%;
+    }
+  }
+
+  .keyword-filter {
     flex-direction: column;
     align-items: flex-start;
-    gap: 4px;
+
+    .keyword-input {
+      width: 100%;
+      font-size: 16px; // 防止 iOS 缩放
+    }
+  }
+
+  .quick-filters {
+    .filter-group {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+
+      .filter-chips {
+        width: 100%;
+      }
+    }
+
+    .chip {
+      font-size: 12px;
+      padding: 6px 10px;
+    }
+  }
+
+  .active-filters {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+
+    .clear-all-btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  .results-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+</style>
+
+<style lang="scss">
+// Element Plus 下拉菜单 Substack 风格 - 全局样式
+.el-dropdown-menu {
+  background: #ffffff !important;
+  border: 1px solid #f2f2f2 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  padding: 6px !important;
+  min-width: 140px !important;
+
+  .el-dropdown-menu__item {
+    padding: 8px 12px !important;
+    border-radius: 6px !important;
+    font-size: 14px !important;
+    color: #1a1a1a !important;
+    transition: all 0.15s !important;
+    line-height: 1.5 !important;
+
+    &:hover {
+      background: #f9fafb !important;
+      color: #1a1a1a !important;
+    }
+
+    &.is-active {
+      background: #1a1a1a !important;
+      color: #ffffff !important;
+      font-weight: 500 !important;
+    }
   }
 }
 </style>

@@ -3,7 +3,8 @@ import { ref, computed } from 'vue'
 import { authApi } from '@/api/auth'
 import { storage } from '@/utils/storage'
 import type { UserInfo, LoginRequest, RegisterRequest, ChangePasswordRequest } from '@/types'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { RESPONSE_CODE } from '@/utils/constants'
 
 export const useAuthStore = defineStore('auth', () => {
   // 状态
@@ -92,7 +93,15 @@ export const useAuthStore = defineStore('auth', () => {
 
       return true
     } catch (error: any) {
-      ElMessage.error(error.message || '登录失败')
+      if (error?.code === RESPONSE_CODE.USER_DISABLED) {
+        const message = error?.message || '该账号已被封禁，请联系管理员。'
+        await ElMessageBox.alert(message, '无法登录', {
+          type: 'error',
+          confirmButtonText: '知道了'
+        })
+      } else {
+        ElMessage.error(error.message || '登录失败')
+      }
       return false
     }
   }

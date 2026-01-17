@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -44,21 +45,7 @@ func main() {
 	if configPath == "" {
 		appEnv := os.Getenv("APP_ENV")
 		ginMode := os.Getenv("GIN_MODE")
-		if appEnv == "production" || ginMode == "release" {
-			localPath := "configs/config.prod.local.yaml"
-			if _, err := os.Stat(localPath); err == nil {
-				configPath = localPath
-			} else {
-				configPath = "configs/config.prod.yaml"
-			}
-		} else {
-			localPath := "configs/config.dev.local.yaml"
-			if _, err := os.Stat(localPath); err == nil {
-				configPath = localPath
-			} else {
-				configPath = "configs/config.dev.yaml"
-			}
-		}
+		configPath = pickConfigPath(appEnv, ginMode)
 	}
 
 	cfg, err := config.Load(configPath)
@@ -131,4 +118,41 @@ func main() {
 	}
 
 	logger.Info("服务器已退出")
+}
+
+func pickConfigPath(appEnv, ginMode string) string {
+	var candidates []string
+	if appEnv == "production" || ginMode == "release" {
+		candidates = []string{"configs/config.prod.local.yaml", "configs/config.prod.yaml"}
+	} else {
+		candidates = []string{"configs/config.dev.local.yaml", "configs/config.dev.yaml"}
+	}
+
+	paths := resolvePaths(candidates)
+	for _, p := range paths {
+		if _, err := os.Stat(p); err == nil {
+			return p
+		}
+	}
+	return candidates[len(candidates)-1]
+}
+
+func resolvePaths(paths []string) []string {
+	var resolved []string
+	// Check current working directory first.
+	if cwd, err := os.Getwd(); err == nil {
+		for _, p := range paths {
+			resolved = append(resolved, filepath.Join(cwd, p))
+		}
+	}
+	// Then check relative to the executable.
+	if exe, err := os.Executable(); err == nil {
+		exeDir := filepath.Dir(exe)
+		for _, p := range paths {
+			resolved = append(resolved, filepath.Join(exeDir, p))
+		}
+	}
+	// Finally, fall back to raw relative paths.
+	resolved = append(resolved, paths...)
+	return resolved
 }

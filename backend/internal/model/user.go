@@ -36,6 +36,7 @@ type User struct {
 	RealName    string     `gorm:"type:varchar(50)" json:"real_name"`                            // 真实姓名
 	Role     UserRole   `gorm:"type:varchar(20);not null;default:'student'" json:"role"`      // 角色
 	Status   UserStatus `gorm:"type:varchar(20);not null;default:'inactive'" json:"status"`   // 状态
+	BanReason string     `gorm:"type:text" json:"ban_reason,omitempty"`                         // ????
 	Avatar   string     `gorm:"type:varchar(255)" json:"avatar"`                               // 头像URL
 	Phone    string     `gorm:"type:varchar(20)" json:"phone"`                                 // 联系电话
 	Major    string     `gorm:"type:varchar(100)" json:"major"`                                // 专业

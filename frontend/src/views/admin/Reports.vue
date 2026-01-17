@@ -355,9 +355,12 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { materialApi, reportApi } from '@/api/material'
+import { useMaterialCategoryStore } from '@/stores/materialCategory'
 import { format } from '@/utils/format'
 import HandleReport from '@/components/HandleReport.vue'
 import type { Report, Material, ReportListParams } from '@/types'
+
+const materialCategoryStore = useMaterialCategoryStore()
 
 const loading = ref(false)
 const filterStatus = ref('')
@@ -462,20 +465,12 @@ const getReasonText = (reason: string) => {
 }
 
 const getCategoryText = (category: string) => {
-  const categoryMap: Record<string, string> = {
-    textbook: '教材',
-    reference: '参考书',
-    exam_paper: '试卷',
-    note: '笔记',
-    exercise: '习题',
-    experiment: '实验指导',
-    thesis: '论文',
-    other: '其他'
-  }
-  return categoryMap[category] || category
+  return materialCategoryStore.getCategoryName(category)
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // 加载分类数据
+  await materialCategoryStore.fetchActiveCategories()
   loadReports()
 })
 </script>

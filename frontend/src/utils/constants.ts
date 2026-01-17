@@ -26,7 +26,8 @@ export const RESPONSE_CODE = {
   NOT_FOUND: 10004,
   SERVER_ERROR: 10005,
   DUPLICATE: 10006,
-  DATABASE_ERROR: 10007
+  DATABASE_ERROR: 10007,
+  USER_DISABLED: 10102
 } as const
 
 // 分页默认值
@@ -52,12 +53,3 @@ export const UPLOAD_LIMITS = {
     'text/plain'
   ]
 } as const
-
-// 资料分类
-export const MATERIAL_CATEGORIES = [
-  { label: '课件资料', value: 'courseware' },
-  { label: '实验指导', value: 'experiment' },
-  { label: '试卷习题', value: 'exam' },
-  { label: '参考文献', value: 'reference' },
-  { label: '其他资料', value: 'other' }
-] as const

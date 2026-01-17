@@ -27,7 +27,7 @@ var (
 
 // MaterialListOptions 资料列表查询选项
 type MaterialListOptions struct {
-	Category      *model.MaterialCategory
+	Category      *model.MaterialCategoryType
 	CourseName    string
 	Status        *model.MaterialStatus
 	Statuses      []model.MaterialStatus // 支持多个状态查询(用于管理员查询"已审核"资料)
@@ -131,12 +131,16 @@ func NewMaterialRepository(db *gorm.DB) MaterialRepository {
 
 // Create 创建资料
 func (r *materialRepository) Create(ctx context.Context, material *model.Material) error {
-	result := r.db.WithContext(ctx).Create(material)
+	searchText := material.SearchVector
+	result := r.db.WithContext(ctx).Omit("search_vector").Create(material)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrDuplicatedKey) {
 			return ErrMaterialAlreadyExists
 		}
 		return result.Error
+	}
+	if err := r.updateSearchVector(ctx, material.ID, searchText); err != nil {
+		return err
 	}
 	return nil
 }
@@ -182,8 +186,12 @@ func (r *materialRepository) FindByIDForUpdate(ctx context.Context, id uint) (*m
 
 // Update 更新资料
 func (r *materialRepository) Update(ctx context.Context, material *model.Material) error {
-	result := r.db.WithContext(ctx).Save(material)
-	return result.Error
+	searchText := material.SearchVector
+	result := r.db.WithContext(ctx).Omit("search_vector").Save(material)
+	if result.Error != nil {
+		return result.Error
+	}
+	return r.updateSearchVector(ctx, material.ID, searchText)
 }
 
 // Delete 删除资料（软删除）
@@ -196,6 +204,13 @@ func (r *materialRepository) Delete(ctx context.Context, id uint) error {
 		return ErrMaterialNotFound
 	}
 	return nil
+}
+
+func (r *materialRepository) updateSearchVector(ctx context.Context, id uint, text string) error {
+	return r.db.WithContext(ctx).Model(&model.Material{}).
+		Where("id = ?", id).
+		Update("search_vector", gorm.Expr("to_tsvector('simple', ?)", text)).
+		Error
 }
 
 // List 分页获取资料列表

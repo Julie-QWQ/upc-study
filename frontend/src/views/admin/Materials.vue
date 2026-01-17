@@ -205,12 +205,14 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useReviewStore } from '@/stores/review'
 import { useMaterialStore } from '@/stores/material'
+import { useMaterialCategoryStore } from '@/stores/materialCategory'
 import { format } from '@/utils/format'
 import ReviewMaterial from '@/components/ReviewMaterial.vue'
 import type { Material } from '@/types'
 
 const reviewStore = useReviewStore()
 const materialStore = useMaterialStore()
+const materialCategoryStore = useMaterialCategoryStore()
 
 const loading = ref(false)
 const activeTab = ref('pending')
@@ -229,7 +231,7 @@ const materials = computed(() => {
 })
 
 const total = computed(() => {
-  return reviewStore.total
+  return activeTab.value === 'pending' ? reviewStore.total : materialStore.total
 })
 
 const loadPendingMaterials = async () => {
@@ -248,7 +250,7 @@ const loadPendingMaterials = async () => {
 const loadReviewedMaterials = async () => {
   loading.value = true
   try {
-    await materialStore.fetchMaterials({
+    await materialStore.fetchReviewedMaterials({
       page: page.value,
       size: size.value,
       reviewed_only: true
@@ -297,17 +299,7 @@ const handleReviewSuccess = () => {
 }
 
 const getCategoryText = (category: string) => {
-  const categoryMap: Record<string, string> = {
-    textbook: '教材',
-    reference: '参考书',
-    exam_paper: '试卷',
-    note: '笔记',
-    exercise: '习题',
-    experiment: '实验指导',
-    thesis: '论文',
-    other: '其他'
-  }
-  return categoryMap[category] || category
+  return materialCategoryStore.getCategoryName(category)
 }
 
 const getStatusText = (status: string) => {
@@ -319,7 +311,9 @@ const getStatusText = (status: string) => {
   return statusMap[status] || status
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // 加载分类数据
+  await materialCategoryStore.fetchActiveCategories()
   loadPendingMaterials()
 })
 </script>

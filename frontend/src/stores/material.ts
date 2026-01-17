@@ -64,6 +64,33 @@ export const useMaterialStore = defineStore('material', () => {
   }
 
   /**
+   * 获取已审核资料列表（管理员）
+   */
+  const fetchReviewedMaterials = async (params?: MaterialListParams) => {
+    loading.value = true
+    try {
+      const queryParams = {
+        ...currentParams.value,
+        ...params
+      }
+
+      const response = await materialApi.getReviewedMaterials(queryParams)
+
+      if (response.code === 0 && response.data) {
+        materials.value = response.data.materials || response.data.list || []
+        total.value = response.data.total
+        page.value = response.data.page
+        size.value = response.data.page_size || response.data.size || 20
+        currentParams.value = queryParams
+      }
+
+      return response
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
    * 搜索资料
    */
   const searchMaterials = async (params: MaterialListParams) => {
@@ -314,6 +341,7 @@ export const useMaterialStore = defineStore('material', () => {
 
     // 方法
     fetchMaterials,
+    fetchReviewedMaterials,
     searchMaterials,
     fetchMaterial,
     createMaterial,

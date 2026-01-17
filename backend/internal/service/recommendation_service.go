@@ -116,12 +116,12 @@ func (s *recommendationService) GetPersonalizedRecommendations(ctx context.Conte
 	}
 
 	// 3. 分析用户偏好
-	categoryCount := make(map[model.MaterialCategory]int)
+	categoryCount := make(map[string]int)
 	courseCount := make(map[string]int)
 
 	for _, d := range downloads {
 		if d.Material != nil {
-			categoryCount[d.Material.Category]++
+			categoryCount[string(d.Material.Category)]++
 			if d.Material.CourseName != "" {
 				courseCount[d.Material.CourseName]++
 			}
@@ -130,7 +130,7 @@ func (s *recommendationService) GetPersonalizedRecommendations(ctx context.Conte
 
 	for _, f := range favorites {
 		if f.Material != nil {
-			categoryCount[f.Material.Category]++
+			categoryCount[string(f.Material.Category)]++
 			if f.Material.CourseName != "" {
 				courseCount[f.Material.CourseName]++
 			}
@@ -138,7 +138,7 @@ func (s *recommendationService) GetPersonalizedRecommendations(ctx context.Conte
 	}
 
 	// 4. 找出最热门的分类和课程
-	var topCategory model.MaterialCategory
+	var topCategory string
 	var topCourse string
 	maxCount := 0
 
@@ -181,7 +181,7 @@ func (s *recommendationService) GetPersonalizedRecommendations(ctx context.Conte
 	results := make([]*model.RecommendationResult, 0, len(materials))
 	for _, m := range materials {
 		reason := "根据您的浏览和下载历史推荐"
-		if m.Category == topCategory {
+		if string(m.Category) == topCategory {
 			reason = fmt.Sprintf("基于您喜欢的 %s 类资料推荐", m.Category)
 		}
 		if m.CourseName == topCourse {

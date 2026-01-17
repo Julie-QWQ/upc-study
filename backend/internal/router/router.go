@@ -327,6 +327,8 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 
 				// 待审核资料列表
 				admin.GET("/materials/pending", materialHandler.ListPendingMaterials)
+				// 已审核资料列表
+				admin.GET("/materials/reviewed", materialHandler.ListReviewedMaterials)
 				// 审核资料
 				admin.POST("/materials/:id/review", reviewHandler.ReviewMaterial)
 
