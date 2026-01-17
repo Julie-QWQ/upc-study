@@ -17,7 +17,7 @@ const loading = ref(false)
 const hotFilters = ref<MaterialListParams>({
   page: 1,
   size: 20,
-  sort_by: 'view_count',
+  sort_by: 'download_count',
   order: 'desc'
 })
 
@@ -77,6 +77,22 @@ const handlePageChange = async (page: number) => {
 // 跳转到资料详情
 const goToDetail = (materialId: number) => {
   router.push(`/materials/${materialId}`)
+}
+
+// 计算排名数字(考虑分页)
+const getRankNumber = (index: number) => {
+  const pageSize = currentFilters.value.size || 20
+  const currentPage = currentFilters.value.page || 1
+  return (currentPage - 1) * pageSize + index + 1
+}
+
+// 获取排名样式类
+const getRankClass = (index: number) => {
+  const rank = getRankNumber(index)
+  if (rank === 1) return 'first'
+  if (rank === 2) return 'second'
+  if (rank === 3) return 'third'
+  return 'normal'
 }
 
 onMounted(async () => {
@@ -151,11 +167,21 @@ onMounted(async () => {
 
         <!-- 资料列表 -->
         <div v-else class="materials-list">
-          <MaterialCard
-            v-for="material in materialStore.materials"
+          <div
+            v-for="(material, index) in materialStore.materials"
             :key="material.id"
-            :material="material"
-          />
+            class="ranked-material-item"
+          >
+            <div class="rank-number" :class="`rank-${getRankClass(index)}`" @click="goToDetail(material.id)">
+              {{ getRankNumber(index) }}
+            </div>
+            <div class="material-card-wrapper" @click="goToDetail(material.id)">
+              <MaterialCard
+                :material="material"
+                @click.stop
+              />
+            </div>
+          </div>
         </div>
 
         <!-- 分页 -->
@@ -252,7 +278,66 @@ onMounted(async () => {
 .materials-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0;
+
+  .ranked-material-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid #f2f2f2;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .rank-number {
+      flex-shrink: 0;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      font-size: 20px;
+      font-weight: 700;
+      color: #6b7280;
+      background: #f3f4f6;
+      cursor: pointer;
+
+      &.rank-first {
+        background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+        color: #92400e;
+        box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+        font-size: 24px;
+      }
+
+      &.rank-second {
+        background: linear-gradient(135deg, #c0c0c0 0%, #e5e7eb 100%);
+        color: #4b5563;
+        box-shadow: 0 2px 8px rgba(192, 192, 192, 0.3);
+        font-size: 22px;
+      }
+
+      &.rank-third {
+        background: linear-gradient(135deg, #cd7f32 0%, #daa06d 100%);
+        color: #78350f;
+        box-shadow: 0 2px 8px rgba(205, 127, 50, 0.3);
+        font-size: 22px;
+      }
+
+      &.rank-normal {
+        background: #f3f4f6;
+        color: #9ca3af;
+      }
+    }
+
+    .material-card-wrapper {
+      flex: 1;
+      min-width: 0;
+      cursor: pointer;
+    }
+  }
 }
 
 .loading-state {
@@ -348,6 +433,28 @@ onMounted(async () => {
     .tab-button {
       flex: 1;
       justify-content: center;
+    }
+  }
+
+  .materials-list {
+    .ranked-material-item {
+      gap: 12px;
+      padding: 12px 0;
+
+      .rank-number {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+
+        &.rank-first {
+          font-size: 20px;
+        }
+
+        &.rank-second,
+        &.rank-third {
+          font-size: 18px;
+        }
+      }
     }
   }
 }

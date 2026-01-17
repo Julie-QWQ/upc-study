@@ -25,7 +25,11 @@ onMounted(() => {
 // 编辑成功
 const handleSuccess = () => {
   ElMessage.success('资料修改成功')
-  router.push(`/materials/${materialId.value}`)
+  // 返回到上一页(通常是详情页),然后返回按钮会正常工作
+  // 使用 go(-1) 而不是 replace,保持路由历史正确
+  setTimeout(() => {
+    router.back()
+  }, 100)
 }
 
 // 取消编辑

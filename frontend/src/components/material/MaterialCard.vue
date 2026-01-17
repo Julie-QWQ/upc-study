@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useMaterialStore } from '@/stores/material'
+import { useMaterialCategoryStore } from '@/stores/materialCategory'
 import type { Material } from '@/types'
 
 interface Props {
@@ -12,18 +13,7 @@ interface Props {
 const props = defineProps<Props>()
 const router = useRouter()
 const materialStore = useMaterialStore()
-
-// 资料分类映射
-const categoryMap: Record<string, string> = {
-  textbook: '教材',
-  reference: '参考书',
-  exam_paper: '试卷',
-  note: '笔记',
-  exercise: '习题',
-  experiment: '实验',
-  thesis: '论文',
-  other: '其他'
-}
+const materialCategoryStore = useMaterialCategoryStore()
 
 // 资料状态映射
 const statusConfig: Record<string, { text: string; color: string }> = {
@@ -56,8 +46,8 @@ const formatTime = (dateStr: string): string => {
   return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
 }
 
-// 资料分类文本
-const categoryText = computed(() => categoryMap[props.material.category] || '其他')
+// 资料分类文本(从动态配置中获取)
+const categoryText = computed(() => materialCategoryStore.getCategoryName(props.material.category))
 
 // 资料状态配置
 const statusInfo = computed(() => statusConfig[props.material.status] || { text: '未知', color: '#9ca3af' })

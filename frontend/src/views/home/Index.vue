@@ -172,6 +172,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useMaterialStore } from '@/stores/material'
+import { useMaterialCategoryStore } from '@/stores/materialCategory'
 import { useSystemStore } from '@/stores/system'
 import { getOverviewStatistics } from '@/api/statistics'
 import SiteName from '@/components/SiteName.vue'
@@ -183,22 +184,15 @@ const siteDescription = computed(() => systemStore.getConfig('site_description',
 
 const authStore = useAuthStore()
 const materialStore = useMaterialStore()
+const materialCategoryStore = useMaterialCategoryStore()
 
 const loading = ref(false)
 const overviewStats = ref<OverviewStatistics>()
 const recentMaterials = ref<any[]>([])
 
-// 分类文本映射
+// 获取分类名称(从动态配置中获取)
 const getCategoryText = (category: MaterialCategory) => {
-  const map: Record<MaterialCategory, string> = {
-    courseware: '课件',
-    exam: '试卷',
-    experiment: '实验',
-    exercise: '习题',
-    reference: '参考资料',
-    other: '其他'
-  }
-  return map[category] || category
+  return materialCategoryStore.getCategoryName(category)
 }
 
 // 格式化相对时间
@@ -243,7 +237,9 @@ const loadRecentMaterials = async () => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // 加载分类数据
+  await materialCategoryStore.fetchActiveCategories()
   loadStatistics()
   loadRecentMaterials()
 })
