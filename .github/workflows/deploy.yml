@@ -16,4 +16,8 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /root/upc-study && chmod +x scripts/deploy.sh && ./scripts/deploy.sh
+            set -e
+            cd /root/upc-study
+            git pull
+            chmod +x scripts/deploy.sh
+            ./scripts/deploy.sh
