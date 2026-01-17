@@ -1,0 +1,75 @@
+name: Auto Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH to server and deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script_stop: true  # 任何命令失败立即停止
+          script: |
+            set -e  # 遇到错误立即退出
+
+            # 设置代理（可选，根据你的服务器情况配置）
+            # export http_proxy=http://127.0.0.1:7890
+            # export https_proxy=http://127.0.0.1:7890
+            # export all_proxy=socks5://127.0.0.1:7890
+
+            echo "=== 1. 拉取最新代码 ==="
+            cd /root/upc-study
+            git pull
+
+            echo "=== 2. 安装前端依赖 ==="
+            cd /root/upc-study/frontend
+
+            # 使用国内 npm 镜像加速
+            npm config set registry https://registry.npmmirror.com
+            npm ci
+
+            echo "=== 3. 构建前端 ==="
+            npm run build
+            if [ ! -d "dist" ]; then
+              echo "❌ 前端构建失败：dist 目录不存在"
+              exit 1
+            fi
+
+            echo "=== 4. 部署前端文件 ==="
+            rm -rf /var/www/upc-study
+            cp -r dist /var/www/upc-study
+
+            echo "=== 5. 重启 Nginx ==="
+            sudo systemctl restart nginx
+            sudo systemctl status nginx --no-pager
+
+            echo "=== 6. 下载 Go 依赖 ==="
+            cd /root/upc-study/backend
+
+            # 使用国内 Go 代理加速
+            export GOPROXY=https://goproxy.cn,direct
+            go mod download
+
+            echo "=== 7. 构建后端 ==="
+            go build -o upc-study-server cmd/server/main.go
+            if [ ! -f "upc-study-server" ]; then
+              echo "❌ 后端构建失败：可执行文件不存在"
+              exit 1
+            fi
+
+            echo "=== 8. 部署后端服务 ==="
+            sudo mv upc-study-server /usr/local/bin/
+            sudo chmod +x /usr/local/bin/upc-study-server
+
+            echo "=== 9. 重启后端服务 ==="
+            sudo systemctl restart upc-study
+            sudo systemctl status upc-study --no-pager
+
+            echo "✅ 部署完成！"
