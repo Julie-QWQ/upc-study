@@ -8,49 +8,76 @@ export const storage = {
    * 设置 Token
    */
   setToken(token: string): void {
-    localStorage.setItem(STORAGE_KEYS.TOKEN, token)
+    sessionStorage.setItem(STORAGE_KEYS.TOKEN, token)
   },
 
   /**
    * 获取 Token
    */
   getToken(): string | null {
-    return localStorage.getItem(STORAGE_KEYS.TOKEN)
+    const sessionToken = sessionStorage.getItem(STORAGE_KEYS.TOKEN)
+    if (sessionToken) {
+      return sessionToken
+    }
+    const legacyToken = localStorage.getItem(STORAGE_KEYS.TOKEN)
+    if (legacyToken) {
+      sessionStorage.setItem(STORAGE_KEYS.TOKEN, legacyToken)
+      localStorage.removeItem(STORAGE_KEYS.TOKEN)
+    }
+    return legacyToken
   },
 
   /**
    * 设置刷新 Token
    */
   setRefreshToken(token: string): void {
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, token)
+    sessionStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, token)
   },
 
   /**
    * 获取刷新 Token
    */
   getRefreshToken(): string | null {
-    return localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)
+    const sessionToken = sessionStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)
+    if (sessionToken) {
+      return sessionToken
+    }
+    const legacyToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)
+    if (legacyToken) {
+      sessionStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, legacyToken)
+      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN)
+    }
+    return legacyToken
   },
 
   /**
    * 设置 Token 过期时间
    */
   setTokenExpireTime(timestamp: number): void {
-    localStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRE_TIME, String(timestamp))
+    sessionStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRE_TIME, String(timestamp))
   },
 
   /**
    * 获取 Token 过期时间
    */
   getTokenExpireTime(): number | null {
-    const time = localStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRE_TIME)
-    return time ? Number(time) : null
+    const time = sessionStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRE_TIME)
+    if (time) {
+      return Number(time)
+    }
+    const legacyTime = localStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRE_TIME)
+    if (legacyTime) {
+      sessionStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRE_TIME, legacyTime)
+      localStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRE_TIME)
+    }
+    return legacyTime ? Number(legacyTime) : null
   },
 
   /**
    * 移除 Token
    */
   removeToken(): void {
+    sessionStorage.removeItem(STORAGE_KEYS.TOKEN)
     localStorage.removeItem(STORAGE_KEYS.TOKEN)
   },
 
@@ -58,6 +85,7 @@ export const storage = {
    * 移除刷新 Token
    */
   removeRefreshToken(): void {
+    sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN)
     localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN)
   },
 
@@ -65,6 +93,7 @@ export const storage = {
    * 移除 Token 过期时间
    */
   removeTokenExpireTime(): void {
+    sessionStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRE_TIME)
     localStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRE_TIME)
   },
 

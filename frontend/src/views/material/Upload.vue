@@ -32,14 +32,8 @@ const handleCancel = () => {
   <div class="upload-page">
     <div class="page-container">
       <main class="content-stream">
-        <!-- 页面标题和返回 -->
+        <!-- 页面标题 -->
         <header class="stream-header">
-          <button class="back-btn" @click="router.back()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M19 12H5M12 19l-7-7 7-7"/>
-            </svg>
-            返回
-          </button>
           <h1 class="page-title">上传资料</h1>
         </header>
 
@@ -76,28 +70,6 @@ const handleCancel = () => {
   margin-bottom: 32px;
   padding-bottom: 24px;
   border-bottom: 1px solid #f2f2f2;
-
-  .back-btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: none;
-    border: none;
-    color: #666;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: color 0.15s;
-
-    &:hover {
-      color: #1a1a1a;
-    }
-
-    svg {
-      width: 20px;
-      height: 20px;
-    }
-  }
 
   .page-title {
     font-size: 32px;

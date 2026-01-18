@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
@@ -34,6 +34,23 @@ const {
 
 // 验证码
 const verificationCode = ref('')
+
+const resetLoginFields = () => {
+  username.value = ''
+  password.value = ''
+  verificationCode.value = ''
+  if (errors.value) {
+    errors.value.username = ''
+    errors.value.password = ''
+    errors.value.verificationCode = ''
+  }
+  verificationError.value = null
+  countdown.value = 0
+}
+
+watch(loginMethod, () => {
+  resetLoginFields()
+})
 
 // 发送验证码
 const handleSendCode = async () => {

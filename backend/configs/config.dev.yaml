@@ -39,6 +39,7 @@ oss:
 smtp:
   host: "smtp.qq.com"
   port: 587
+  tls_mode: "starttls"
   username: "your_email@qq.com"
   password: "your_smtp_password"
   from: "UPC-DocHub"
