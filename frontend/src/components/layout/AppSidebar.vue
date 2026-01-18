@@ -238,15 +238,6 @@ const isActive = (path: string) => {
   return navigationStore.isPathActive(path)
 }
 
-  return false
-}
-
-// 判断当前激活的菜单项（使用导航状态，响应更快速）
-const isActive = (path: string) => {
-  // 使用导航状态而不是路由状态，避免等待路由切换
-  return navigationStore.isPathActive(path)
-}
-
 // 导航跳转
 const navigate = (path: string) => {
   router.push(path)
