@@ -85,7 +85,7 @@ func RunMigrations(cfg *config.Config) error {
 	}
 
 	// 获取所有 .up.sql 迁移文件
-	migrationsDir, files, err := findMigrationFiles()
+	_, files, err := findMigrationFiles()
 	if err != nil {
 		return fmt.Errorf("查找迁移文件失败: %w", err)
 	}
